@@ -7,11 +7,49 @@ library(tidyverse)
 ```
 
 ```{r}
-beds <- read_csv("../raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
+beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
 ```
 
 ```{r}
 beds %>% 
-  filter(speciality_name == "All Acute")
+  filter(specialty_name == "All Acute") %>% 
+  ggplot(aes(x = quarter, y = percentage_occupancy))+
+  geom_line(aes(colour = hb), group = 1)+
+  facet_wrap(~ hb)
+```
+
+-----------------------------------------------
+
+```{r}
+age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
+```
+```{r}
+
+library(lubridate)
+
+# change quarter column into the date at the start of each quarter
+ age_sex <-  age_sex %>% 
+    mutate(quarter = yq(quarter))
+
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(total_length_of_stay = sum(length_of_stay)) %>% 
+  ggplot(aes(x = quarter, y = total_length_of_stay))+
+  geom_line(aes(colour = age))+
+  theme(axis.text.x = element_text(angle = 45))
+
+
+```
+
+
+
+
+
+```{r}
+age_sex %>% 
+count(admission_type)
+
+age_sex
 ```
 
