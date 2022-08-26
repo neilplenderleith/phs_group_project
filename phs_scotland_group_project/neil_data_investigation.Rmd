@@ -1,0 +1,17 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+beds <- read_csv("../raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
+```
+
+```{r}
+beds %>% 
+  filter(speciality_name == "All Acute")
+```
+
