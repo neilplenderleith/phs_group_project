@@ -2,3 +2,5 @@ Questions for Monday meeting with David and Colin
 
 
 General better understading of table titles namely Episodes Spells
+
+What is the unit of measurement for lengthofepisode/spell, lenthofstay
