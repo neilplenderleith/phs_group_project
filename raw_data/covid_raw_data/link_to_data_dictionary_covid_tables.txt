@@ -1,0 +1,5 @@
+Link to the data dictionary for covid data frames
+
+Note that all the 6 covid tables share this data dictionary
+
+https://www.opendata.nhs.scot/dataset/covid-19-wider-impacts-hospital-admissions/resource/746f9bac-77f1-43fe-b69f-5ca2cde2201b

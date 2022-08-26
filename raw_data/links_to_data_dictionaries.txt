@@ -1,0 +1,5 @@
+https://www.opendata.nhs.scot/dataset/inpatient-and-daycase-activity/resource/4fc640aa-bdd4-4fbe-805b-1da1c8ed6383
+
+https://www.opendata.nhs.scot/dataset/monthly-emergency-department-activity-and-waiting-times/resource/2a4adc0a-e8e3-4605-9ade-61e13a85b3b9
+
+https://www.opendata.nhs.scot/dataset/hospital-beds-information/resource/f272bb7d-5320-4491-84c1-614a2c064007
