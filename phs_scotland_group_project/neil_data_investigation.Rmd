@@ -5,6 +5,7 @@ output: html_notebook
 ```{r}
 library(tidyverse)
 library(scales)
+library(plotly)
 ```
 
 ```{r}
@@ -360,7 +361,7 @@ mutate(percent_seen_within_8hr = ((number_of_attendances_aggregate-attendance_gr
 
 ```{r}
 # draw percentage of 4 hour wait for all years
-ae_wait_times %>% 
+for_plotly <- ae_wait_times %>% 
   filter(department_type == "Emergency Department") %>% 
   group_by(date, department_type) %>% 
   summarise(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
@@ -384,6 +385,8 @@ ae_wait_times %>%
   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
   labs(title = "percentage of A&E departments meeting the 4 hr target turnaround for patients",
        subtitle = "added in vertical lines for January to help")
+
+ggplotly(for_plotly)
 ```
 
 ```{r}
@@ -471,6 +474,39 @@ ggplot(data = scotland) +
 
 ```{r}
 ggplot(data = scotland) +
-geom_sf(fill = "grey")+
-geom_text(aes(x = lat , y = long, label = HBNumber), color = "darkblue", fontface = "bold", check_overlap = TRUE) 
+geom_sf(fill = "green")+
+ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 3, color = "black", fontface = "bold") +
+  theme_void()
 ```
+```{r}
+
+library(sf)
+
+scotland_smaller <- scotland %>% # make a smaller version for performance issues
+  st_simplify(TRUE, dTolerance = 2000)
+#fixes problems caused by above 
+scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
+
+
+# 
+#   fig <- ggplotly(
+#     ggplot(scotland)+
+#   geom_sf(aes(fill = HBName))
+# )
+#   fig
+
+  
+  p <- ggplot(scotland_smaller) + 
+  geom_sf(aes(fill = HBName, text = paste("<b>", HBName, "</b>\n", HBCode)))+
+    theme_void()
+  p %>%
+  ggplotly(tooltip = "text") %>%
+  style(hoverlabel = list(bgcolor = "white"), hoveron = "fill")
+    
+  
+```
+
+```{r}
+library(dash)
+```
+
