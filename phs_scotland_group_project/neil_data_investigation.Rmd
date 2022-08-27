@@ -345,15 +345,20 @@ ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_2
 
 glimpse(ae_wait_times)
 
-#make a date column witht eh first date of every month
+#make a date and year column with the first date of every month
 ae_wait_times <- ae_wait_times %>% 
-  mutate(date = ym(month), .after = month)
+  mutate(date = ym(month), .after = month,
+         year = year(date))
 
 #make a percent column with percent of patients meeting the 4hr target time
 ae_wait_times <- ae_wait_times %>% 
   mutate(percent_4hr_target_achieved = (number_meeting_target_aggregate/number_of_attendances_aggregate)*100) %>% 
+  #add an 8hr one - not currently used
 mutate(percent_seen_within_8hr = ((number_of_attendances_aggregate-attendance_greater8hrs)/number_of_attendances_aggregate)*100)
+```
 
+
+```{r}
 # draw percentage of 4 hour wait for all years
 ae_wait_times %>% 
   filter(department_type == "Emergency Department") %>% 
@@ -382,13 +387,14 @@ ae_wait_times %>%
 ```
 
 ```{r}
-#work in progress!
+# 4hr wait by health board for all years facet wrapped
 ae_wait_times %>% 
   filter(department_type == "Emergency Department") %>% 
-  group_by(date) %>% 
+  group_by(date, hbt) %>% 
+  mutate(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
   slice(1) %>%  
   ggplot(aes(x = date, y = avg_4hr_target_made))+
-  geom_line(aes(colour = department_type))+
+  geom_line(aes(colour = hbt))+
   scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
   geom_smooth()+
@@ -403,6 +409,68 @@ ae_wait_times %>%
   geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
   geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
   geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  facet_wrap(~ hbt)
 ```
 
+```{r}
+target_2007 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2007) %>% 
+  rename(ae_target_2007 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2007)
+
+target_2018 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2018) %>% 
+  rename(ae_target_2018 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2018)
+
+```
+
+
+
+
+
+
+```{r}
+library(sf)
+
+scotland <- st_read("../../../../Downloads/SG_NHS_HealthBoards_2019/SG_NHS_HealthBoards_2019.shp")
+
+# view(scotland)
+# 
+head(scotland, 3)
+# 
+plot(scotland[-1])
+
+scotland <-  scotland %>% 
+  mutate(centres = st_centroid(st_make_valid(geometry))) %>%
+    mutate(lat = st_coordinates(centres)[,1],
+           long = st_coordinates(centres)[,2],
+           target_2007 = target_2007$ae_target_2007,
+           target_2018 = target_2018$ae_target_2018,
+           change_ae = target_2007 - target_2018)
+
+ggplot(data = scotland) +
+    geom_sf(aes(fill = change_ae)) +
+    scale_fill_viridis_c(option = "plasma")+
+  labs(title = "percent change in A&E depts meeting the 4 hour target 2007 - 2018")
+  
+
+ggplot(data = scotland) +
+    geom_sf(aes(fill = target_2018)) +
+    scale_fill_viridis_c(option = "plasma")+
+  labs(title = "Percent of A&E depts making the 4hr target")
+```
+
+
+```{r}
+ggplot(data = scotland) +
+geom_sf(fill = "grey")+
+geom_text(aes(x = lat , y = long, label = HBNumber), color = "darkblue", fontface = "bold", check_overlap = TRUE) 
+```
