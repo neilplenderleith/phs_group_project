@@ -2,3 +2,121 @@
 title: "R Notebook"
 output: html_notebook
 ---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+# Data
+
+```{r}
+hb_agesex <- read.csv("raw_data/covid_raw_data/hospital_admissions_hb_agesex_20220302.csv") %>% clean_names()
+hb_names <- read_csv("raw_data/covid_raw_data/health_board_names.csv") %>% clean_names()
+```
+
+
+# Data exploration
+
+```{r}
+hb_agesex %>% names()
+
+hb_agesex %>% head()
+
+hb_agesex %>% distinct(hb)
+```
+
+The health board number is not very useful or easy to make connections with, we should change this to the name of the health board
+
+```{r}
+#select only the columns with health board names
+hb_names <- hb_names %>% 
+  select(hb, hb_name)
+```
+
+
+```{r}
+#join to get health board names
+hb_agesex <- hb_agesex %>% 
+  left_join(hb_names, by = "hb")
+```
+
+```{r}
+#Fill in NAs in hb_name - these are NA because the code is the country code for NHS Scotland
+hb_agesex <- hb_agesex %>% 
+  mutate(hb_name = if_else(
+    is.na(hb_name),
+    "All Scotland",
+    hb_name
+  )) 
+```
+
+```{r}
+hb_agesex %>% 
+  distinct(admission_type)
+```
+We have three different admission types (all, emergency, planned) - should we only be looking at emergency admission types (e.g. acute)?
+
+```{r}
+hb_agesex %>% 
+  distinct(age_group)
+```
+
+```{r}
+hb_agesex %>% 
+  distinct(week_ending)
+```
+
+```{r}
+#change week_ending into date format
+hb_agesex <- hb_agesex %>% 
+  mutate(week_ending = ymd(week_ending))
+```
+
+```{r}
+hb_agesex <- hb_agesex %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending)
+```
+
+
+```{r}
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All",
+         year == 2020) %>% 
+  group_by(hb_name, month) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+    geom_line(aes(x = month,
+                  y = mean_admissions), group = 1, colour = "red") +
+  geom_line(aes(x = month,
+                y = mean_20182019_admissions), group = 1, colour = "blue") +
+  facet_wrap(~hb_name, scales = "free_y")
+```
+
+```{r}
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All",
+         year == 2021) %>% 
+  group_by(hb_name, month) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+    geom_line(aes(x = month,
+                  y = mean_admissions), group = 1, colour = "red") +
+  geom_line(aes(x = month,
+                y = mean_20182019_admissions), group = 1, colour = "blue") +
+  facet_wrap(~hb_name, scales = "free_y")
+```
+
+```{r}
+hb_simd <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_simd_20220302.csv") %>% clean_names()
+```
+

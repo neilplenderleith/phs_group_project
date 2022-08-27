@@ -22,15 +22,41 @@ beds %>%
 
 ```{r}
 age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
+
+health_board_names <- read_csv("raw_data/non_covid_raw_data/health_board_names.csv")
+
+age_sex %>% 
+  count(hb)
+
+season_age_sex <- age_sex %>% 
+  mutate(date = yq(quarter),
+         year = year(date),
+         month = month(date, label = TRUE, abbr = FALSE),
+         season = case_when(
+           str_detect(month, "December") ~ "Winter",
+           str_detect(month, "January") ~ "Winter",
+           str_detect(month, "February") ~ "Winter",
+           str_detect(month, "March") ~ "Spring",
+           str_detect(month, "April") ~ "Spring",
+           str_detect(month, "May") ~ "Spring",
+           str_detect(month, "June") ~ "Summer",
+           str_detect(month, "July") ~ "Summer",
+           str_detect(month, "August") ~ "Summer",
+           str_detect(month, "September") ~ "Autumn",
+           str_detect(month, "October") ~ "Autumn",
+           str_detect(month, "November") ~ "Autumn"),
+         season = factor(season, order = TRUE)) 
 ```
 ```{r}
 
 library(lubridate)
+library(zoo)
 
 # change quarter column into the date at the start of each quarter
  age_sex <-  age_sex %>% 
     mutate(quarter = yq(quarter))
 
+ # shows the total length of stay by age bracket for emergency inpatients
 age_sex %>% 
   filter(admission_type == "Emergency Inpatients") %>% 
   group_by(quarter, age) %>% 
@@ -51,5 +77,188 @@ age_sex %>%
 count(admission_type)
 
 age_sex
+```
+
+```{r}
+ # shows the total length of stay by age bracket for elective inpatients
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(total_length_of_stay = sum(length_of_stay)) %>% 
+  ggplot(aes(x = quarter, y = total_length_of_stay))+
+  geom_line(aes(colour = age))+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+```{r}
+ # shows the mean length of stay by age bracket for emergency inpatients
+#can facet by sex also if required
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age))+
+  theme(axis.text.x = element_text(angle = 45))
+  #facet_wrap( ~ sex)
+
+ # shows the mean length of stay by age bracket for elective inpatients
+# can facet by sex 
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_col(aes(fill = age), position = "dodge")+
+  theme(axis.text.x = element_text(angle = 45))+
+  scale_x_date(breaks = 4)
+  #facet_wrap(~ sex)
+```
+
+```{r}
+age_sex %>% 
+  mutate(date = yq(quarter),
+         year = year(date),
+         month = month(date, label = TRUE, abbr = FALSE),
+         season = case_when(
+           str_detect(month, "December") ~ "Winter",
+           str_detect(month, "January") ~ "Winter",
+           str_detect(month, "February") ~ "Winter",
+           str_detect(month, "March") ~ "Spring",
+           str_detect(month, "April") ~ "Spring",
+           str_detect(month, "May") ~ "Spring",
+           str_detect(month, "June") ~ "Summer",
+           str_detect(month, "July") ~ "Summer",
+           str_detect(month, "August") ~ "Summer",
+           str_detect(month, "September") ~ "Autumn",
+           str_detect(month, "October") ~ "Autumn",
+           str_detect(month, "November") ~ "Autumn"),
+         season = factor(season, order = TRUE)) 
+```
+
+
+```{r}
+
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, sex) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = sex, group = sex))+
+  theme(axis.text.x = element_text(angle = 45))+
+  geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = sex), size = 0.5)+
+  labs(title = "Emergency Inpatient by gender and average length of stay")
+
+
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, sex) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = sex, group = sex))+
+  theme(axis.text.x = element_text(angle = 45))+
+  geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = sex), size = 0.5)+
+  labs(title = "Elective Inpatient by gender and average length of stay")
+
+```
+
+
+```{r}
+# emergency inpatient by age and avg length of stay
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Emergency inpatient by age and avg length of stay")
+
+# elective inpatient by age and avg length of stay
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Elective inpatient by age and avg length of stay")
+```
+
+
+
+```{r}
+# Plot comparison of Emergency vs Elective submissions
+age_sex %>% 
+  filter(admission_type %in% c("Emergency Inpatients", "Elective Inpatients")) %>% 
+  group_by(quarter, admission_type) %>% 
+  summarise(avg_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stay, colour = admission_type))+
+  geom_line(aes(group = admission_type))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+# avg_stay by admission type
+age_sex %>% 
+  group_by(quarter, admission_type) %>% 
+  summarise(avg_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stay, colour = admission_type))+
+  geom_line(aes(group = admission_type))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# avg_stay for all types
+age_sex %>% 
+  group_by(quarter) %>% 
+  summarise(avg_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stay, group = 1))+
+  geom_line(aes(group = 1))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# number of stays for all types
+age_sex %>% 
+  group_by(quarter) %>% 
+  summarise(total_stays = sum(stays, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = total_stays, group = 1))+
+  geom_line(aes(group = 1))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv")
+```
+
+
+```{r}
+simd %>% 
+  
+```
+
+
+```{r}
+speciality <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_specialty.csv")
 ```
 
