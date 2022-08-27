@@ -91,20 +91,99 @@ beds_select <- beds %>%
          year = year(date),
          month = month(date, label = TRUE, abbr = FALSE),
          season = case_when(
-           str_detect(month, "December") ~ "Winter",
            str_detect(month, "January") ~ "Winter",
-           str_detect(month, "February") ~ "Winter",
-           str_detect(month, "March") ~ "Spring",
            str_detect(month, "April") ~ "Spring",
-           str_detect(month, "May") ~ "Spring",
-           str_detect(month, "June") ~ "Summer",
            str_detect(month, "July") ~ "Summer",
-           str_detect(month, "August") ~ "Summer",
-           str_detect(month, "September") ~ "Autumn",
-           str_detect(month, "October") ~ "Autumn",
-           str_detect(month, "November") ~ "Autumn"),
+           str_detect(month, "October") ~ "Autumn"),
          season = factor(season, order = TRUE)) %>% 
   select(quarter, hb, location, specialty_name, all_staffed_beddays, total_occupied_beddays, average_available_staffed_beds, average_occupied_beds, percentage_occupancy, date, year, month, season)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_percentage_occupancy)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(total_occupied_beddays)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_occupied_beddays = mean(total_occupied_beddays)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_occupied_beddays)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(all_staffed_beddays)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_staffed_beddays = mean(all_staffed_beddays)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_staffed_beddays)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(average_available_staffed_beds)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_avg_staffed_beddays = mean(average_available_staffed_beds)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_staffed_beddays)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(average_available_staffed_beds)) %>% 
+  mutate(empty_beddays = all_staffed_beddays - total_occupied_beddays) %>% 
+  group_by(quarter) %>%
+  summarise(mean_empty = mean(empty_beddays)) %>% 
+  ggplot(aes(x = quarter,
+             y= mean_empty)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(quarter, hb) %>% 
+  summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_percentage_occupancy)) +
+  geom_point() +
+  geom_line(aes(group = hb, colour = hb))
+```
+
+
+`
+```{r}
+beds_select %>%
+  filter(!is.na(average_occupied_beds)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_average_occupied_beds = mean(average_occupied_beds)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_average_occupied_beds)) +
+  geom_point() +
+  geom_line(group = 1)
 ```
 
 
@@ -210,4 +289,134 @@ beds_select %>%
   group_by(season) %>% 
   summarise(count = n())
 ```
+################################################################################
+################################################################################
+################################################################################
+
+
+
+
+
+```{r}
+simd_treatment <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% clean_names()
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_stay)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_stay)) %>% 
+  group_by(quarter, admission_type) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(aes(group = admission_type, colour = admission_type))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_stay),
+         simd == 5) %>% 
+  mutate(simd = replace_na(simd, 0)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_stay),
+         simd == 1) %>% 
+  mutate(simd = replace_na(simd, 0)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_stay)) %>% 
+  mutate(simd = replace_na(simd, 0)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_episode)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_avg_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_episode)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_episode)) %>% 
+  group_by(quarter, admission_type) %>% 
+  summarise(mean_avg_epidsode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_epidsode)) +
+  geom_point() +
+  geom_line(aes(group = admission_type, colour = admission_type))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_episode),
+         simd == 5) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_avg_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_episode)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(average_length_of_episode),
+         simd == 1) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_avg_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_episode)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
 
