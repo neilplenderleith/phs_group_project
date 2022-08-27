@@ -1,0 +1,213 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(tsibble)
+library(lubridate)
+```
+
+
+```{r}
+beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% 
+  clean_names()
+```
+
+
+```{r}
+glimpse(beds)
+```
+
+
+```{r}
+skim(beds)
+```
+
+
+```{r}
+view(beds)
+```
+
+
+```{r}
+beds %>% 
+  arrange(desc(all_staffed_beddays))
+```
+
+
+```{r}
+beds %>% 
+  distinct(location)
+
+beds %>% 
+  distinct(hb)
+
+beds %>% 
+  distinct(all_staffed_beddays)
+
+beds %>% 
+  distinct(total_occupied_beddays)
+```
+
+
+```{r}
+beds %>% 
+  ggplot(aes(x = all_staffed_beddays)) +
+  geom_histogram(col = "white")+
+  scale_x_log10()
+```
+
+
+```{r}
+beds %>% 
+  ggplot(aes(x = total_occupied_beddays)) +
+  geom_histogram(col = "white")+
+  scale_x_log10()
+```
+
+
+```{r}
+beds %>% 
+  ggplot(aes(x = average_occupied_beds)) +
+  geom_histogram(col = "white")+
+  scale_x_log10()
+```
+
+
+```{r}
+beds %>% 
+  ggplot(aes(x = percentage_occupancy)) +
+  geom_histogram(col = "white")
+```
+
+
+```{r}
+beds_select <- beds %>% 
+  mutate(date = yq(quarter),
+         year = year(date),
+         month = month(date, label = TRUE, abbr = FALSE),
+         season = case_when(
+           str_detect(month, "December") ~ "Winter",
+           str_detect(month, "January") ~ "Winter",
+           str_detect(month, "February") ~ "Winter",
+           str_detect(month, "March") ~ "Spring",
+           str_detect(month, "April") ~ "Spring",
+           str_detect(month, "May") ~ "Spring",
+           str_detect(month, "June") ~ "Summer",
+           str_detect(month, "July") ~ "Summer",
+           str_detect(month, "August") ~ "Summer",
+           str_detect(month, "September") ~ "Autumn",
+           str_detect(month, "October") ~ "Autumn",
+           str_detect(month, "November") ~ "Autumn"),
+         season = factor(season, order = TRUE)) %>% 
+  select(quarter, hb, location, specialty_name, all_staffed_beddays, total_occupied_beddays, average_available_staffed_beds, average_occupied_beds, percentage_occupancy, date, year, month, season)
+```
+
+
+
+```{r}
+beds_select %>% 
+  group_by(year) %>% 
+  summarise(mean_year_bed = mean(average_occupied_beds)) %>% 
+  ggplot(aes(x = year,
+             y = mean_year_bed)) +
+  geom_line()
+```
+
+
+```{r}
+beds_select %>% 
+  group_by(season) %>% 
+  summarise(mean_year_bed = mean(average_occupied_beds)) %>% 
+  ggplot(aes(x = season,
+             y = mean_year_bed)) +
+  geom_col() + 
+  scale_x_discrete(limits = c("Spring", "Summer", "Autumn", "Winter"))
+```
+
+
+
+```{r}
+beds_select %>% 
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(season) %>% 
+  summarise(mean_prct_beds = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = season,
+             y = mean_prct_beds)) +
+  geom_col() +
+  scale_x_discrete(limits = c("Spring", "Summer", "Autumn", "Winter"))
+```
+
+
+```{r}
+beds_select %>% 
+  filter(!is.na(total_occupied_beddays)) %>% 
+  group_by(season) %>% 
+  summarise(mean_occupied_beddays = mean(total_occupied_beddays)) %>% 
+  ggplot(aes(x = season,
+             y = mean_occupied_beddays)) +
+  geom_col() +
+  scale_x_discrete(limits = c("Spring", "Summer", "Autumn", "Winter"))
+```
+
+
+```{r}
+beds_select %>% 
+  filter(quarter == "2016Q4")
+```
+
+
+```{r}
+beds_select %>% 
+  ggplot(aes(x = season,
+             y = percentage_occupancy)) +
+  geom_col() +
+  facet_wrap(~ specialty_name)
+```
+
+
+```{r}
+beds_select %>% 
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(specialty_name, month) %>% 
+  summarise(mean_pct_speciality = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = month,
+             y = mean_pct_speciality)) +
+  geom_point() +
+  geom_line(aes(group = specialty_name, colour = specialty_name))+
+  theme(legend.position = "none")
+```
+
+
+
+```{r}
+beds_select %>%
+  filter(percentage_occupancy == 100,
+         year == 2017) %>% 
+  group_by(season, hb) %>% 
+  summarise(count = n()) %>% 
+  ggplot(aes(x = season,
+             y = count)) +
+  geom_col(aes(fill = hb), position = "dodge")
+
+```
+
+
+```{r}
+beds_select %>% 
+  mutate(bins = 
+    case_when(percentage_occupancy < 25 ~ "<25",
+              percentage_occupancy < 50 ~ "25-50",
+              percentage_occupancy < 75 ~ "50-75",
+              percentage_occupancy > 75 ~ ">75"
+    )
+  ) %>% 
+  filter(bins == "<25") %>% 
+  group_by(season) %>% 
+  summarise(count = n())
+```
+
