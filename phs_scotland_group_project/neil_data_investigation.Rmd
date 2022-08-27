@@ -191,6 +191,31 @@ age_sex %>%
   geom_point(aes(colour = age), size = 0.5)+
   labs(title = "Elective inpatient by age and avg length of stay")
 ```
+```{r}
+# emergency inpatient by age and avg episodes
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Emergency inpatient by age and avg episodes")
+
+# emergency inpatient by age and avg episodes
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Emergency inpatient by age and avg episodes")
+```
 
 
 
@@ -316,8 +341,68 @@ speciality_averages %>%
 ```
 
 ```{r}
-ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv")
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
 glimpse(ae_wait_times)
+
+#make a date column witht eh first date of every month
+ae_wait_times <- ae_wait_times %>% 
+  mutate(date = ym(month), .after = month)
+
+#make a percent column with percent of patients meeting the 4hr target time
+ae_wait_times <- ae_wait_times %>% 
+  mutate(percent_4hr_target_achieved = (number_meeting_target_aggregate/number_of_attendances_aggregate)*100) %>% 
+mutate(percent_seen_within_8hr = ((number_of_attendances_aggregate-attendance_greater8hrs)/number_of_attendances_aggregate)*100)
+
+# draw percentage of 4 hour wait for all years
+ae_wait_times %>% 
+  filter(department_type == "Emergency Department") %>% 
+  group_by(date, department_type) %>% 
+  summarise(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
+  ggplot(aes(x = date, y = avg_4hr_target_made))+
+  geom_line(aes(colour = department_type))+
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
+  geom_smooth()+
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  labs(title = "percentage of A&E departments meeting the 4 hr target turnaround for patients",
+       subtitle = "added in vertical lines for January to help")
+```
+
+```{r}
+#work in progress!
+ae_wait_times %>% 
+  filter(department_type == "Emergency Department") %>% 
+  group_by(date) %>% 
+  slice(1) %>%  
+  ggplot(aes(x = date, y = avg_4hr_target_made))+
+  geom_line(aes(colour = department_type))+
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
+  geom_smooth()+
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)
 ```
 
