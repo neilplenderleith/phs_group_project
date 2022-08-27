@@ -4,6 +4,7 @@ output: html_notebook
 ---
 ```{r}
 library(tidyverse)
+library(scales)
 ```
 
 ```{r}
@@ -248,17 +249,75 @@ age_sex %>%
 
 
 ```{r}
-simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv")
+simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% janitor::clean_names()
 ```
-
-
 ```{r}
+#total episodes(hospitalisations?) by simd value
 simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(total_episodes = sum(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = total_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+  
   
 ```
 
 
 ```{r}
-speciality <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_specialty.csv")
+# plot avg stay length for most and least deprived for emergency unpatients
+simd %>% 
+  filter(admission_type == "Emergency Inpatients", simd %in% c(1,5)) %>% 
+  drop_na(simd) %>% 
+  group_by(quarter,simd) %>% 
+  summarise(avg_stay_length = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stay_length)) +
+  geom_line(aes(colour = simd, group = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+```
+
+
+```{r}
+speciality <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
+```
+
+```{r}
+speciality %>% 
+  count(admission_type)
+
+speciality %>% 
+  count(hb)
+
+speciality %>% 
+  count(location)
+
+speciality %>% 
+  count(specialty_name)
+
+# add averages 
+speciality_averages <- speciality %>% 
+  group_by(quarter, admission_type) %>% 
+  mutate(avg_length_spell= mean(average_length_of_spell, na.rm = TRUE),
+         avg_length_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ungroup()
+
+
+speciality_averages %>% 
+  group_by(quarter, admission_type) %>% 
+  slice(1) %>% 
+  ggplot(aes(x = quarter, y = average_length_of_episode, group = admission_type)) + 
+  geom_line(aes(colour = admission_type))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv")
+
+glimpse(ae_wait_times)
 ```
 
