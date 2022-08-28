@@ -8,6 +8,7 @@ output: html_notebook
 library(tidyverse)
 library(janitor)
 library(lubridate)
+library(infer)
 ```
 
 # Data
@@ -20,6 +21,10 @@ hb_names <- read_csv("raw_data/covid_raw_data/health_board_names.csv") %>% clean
 
 # Data exploration
 
+## HB Age/sex dataset
+
+### Variables in dataset
+
 ```{r}
 hb_agesex %>% names()
 
@@ -27,6 +32,8 @@ hb_agesex %>% head()
 
 hb_agesex %>% distinct(hb)
 ```
+
+
 
 The health board number is not very useful or easy to make connections with, we should change this to the name of the health board
 
@@ -61,7 +68,7 @@ We have three different admission types (all, emergency, planned) - should we on
 
 ```{r}
 hb_agesex %>% 
-  distinct(age_group)
+  distinct(hb)
 ```
 
 ```{r}
@@ -83,40 +90,308 @@ hb_agesex <- hb_agesex %>%
 
 
 ```{r}
+#create winter and non winter groups
+hb_agesex <- hb_agesex %>% 
+  mutate(is_winter = if_else(
+    month %in% c("Dec", "Jan", "Feb"), TRUE, FALSE
+  ), .after = month)
+```
+
+
+### Exploratory analysis
+
+#### Compare mean admissions between Covid times and pre-Covid times
+```{r}
+#compare mean admissions in 2020/2021/2022 with 2018/2019 averages
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All") %>% 
+  group_by(hb_name, week_ending) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+    geom_line(aes(x = week_ending,
+                  y = mean_admissions), group = 1, colour = "red") +
+  geom_line(aes(x = week_ending,
+                y = mean_20182019_admissions), group = 1, colour = "blue") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)+
+  facet_wrap(~hb_name, scales = "free_y") + 
+  labs(x = "Date",
+       y = "Average admissions per week",
+       colour = "Covid vs Pre-Covid")
+```
+
+#### Compare number of admissions between winter and non winter
+
+No significant differences
+
+```{r}
+#get boxplots to compare spread of number of admissions for winter vs not winter
 hb_agesex %>% 
   filter(admission_type == "Emergency",
          age_group == "All ages",
          sex == "All",
-         year == 2020) %>% 
-  group_by(hb_name, month) %>% 
-  summarise(mean_admissions = mean(number_admissions),
-            mean_20182019_admissions = mean(average20182019)) %>% 
-  ggplot() +
-    geom_line(aes(x = month,
-                  y = mean_admissions), group = 1, colour = "red") +
-  geom_line(aes(x = month,
-                y = mean_20182019_admissions), group = 1, colour = "blue") +
-  facet_wrap(~hb_name, scales = "free_y")
+         hb_name == "All Scotland") %>% 
+  ggplot(aes(x = number_admissions,
+             y = is_winter)) +
+  geom_boxplot() +
+  geom_jitter(colour = "grey30", alpha = 0.5) 
+  
 ```
+
+Not expecting significant difference
+
+H0 - number of admissions(winter) = number of admissions(not winter)
+H1 - number of admissions(winter) > number of admissions(not winter)
+
+```{r}
+null_distribution <- hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All",
+         hb_name == "All Scotland") %>% 
+  specify(number_admissions ~ is_winter) %>% 
+  hypothesise(null = "independence") %>% 
+  generate(reps = 5000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("TRUE", "FALSE"))
+```
+
+```{r}
+observed_stat <- hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All",
+         hb_name == "All Scotland") %>% 
+  specify(number_admissions ~ is_winter) %>% 
+  calculate(stat = "diff in means", order = c("TRUE", "FALSE"))
+```
+
+```{r}
+null_distribution %>% 
+  visualise() +
+  shade_p_value(obs_stat = observed_stat, direction = "right")
+```
+```{r}
+p_value <- null_distribution %>% 
+  get_p_value(obs_stat = observed_stat, direction = "right")
+
+p_value
+```
+#### Compare mean number of admissions for winter/not winter for different HBs
+
+No significant differences
 
 ```{r}
 hb_agesex %>% 
   filter(admission_type == "Emergency",
          age_group == "All ages",
          sex == "All",
-         year == 2021) %>% 
-  group_by(hb_name, month) %>% 
+         hb_name != "All Scotland") %>% 
+  group_by(hb_name, is_winter) %>% 
+  summarise(mean_num_admissions = mean(number_admissions)) %>% 
+  ggplot(aes(x = hb_name,
+             y = mean_num_admissions,
+             fill = is_winter)) +
+  geom_col(position = "dodge") +
+  scale_y_sqrt()
+  
+```
+
+#### Compare number of admissions by sex and winter/not winter
+
+No significant differences
+
+```{r}
+#get box plot for number of admissions by sex and whether or not it is winter
+hb_agesex %>% 
+  filter(sex != "All",
+         admission_type == "Emergency",
+         hb_name == "All Scotland") %>% 
+  ggplot(aes(x = number_admissions,
+             y = sex,
+             colour = is_winter)) +
+  geom_boxplot() +
+  geom_jitter(colour = "grey30", alpha = 0.5)
+  
+```
+
+```{r}
+#get bar graphs for mean number of admissions for each month by sex
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         sex != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, month, sex) %>% 
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot() +
+    geom_col(aes(x = month,
+                  y = mean_admissions, 
+                  fill = sex), position = "dodge") 
+
+
+
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         sex != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, month, sex) %>% 
+  summarise(mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+  geom_col(aes(x = month,
+                  y = mean_20182019_admissions, 
+                  fill = sex), position = "dodge")
+```
+
+```{r}
+#get line graph of average number of admissions over time for each age group
+
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group != "All ages", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, week_ending, age_group) %>% 
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot() +
+    geom_line(aes(x = week_ending,
+                  y = mean_admissions, 
+                  colour = ordered(age_group, levels = c("Under 5",
+                                                       "5 - 14",
+                                                       "15 - 44",
+                                                       "45 - 64",
+                                                       "65 - 74",
+                                                       "75 - 84",
+                                                       "85 and over")))) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)+
+  labs(x = "Month",
+       y = "Average number of admissions per week",
+       colour = "Age group")
+```
+
+
+
+```{r}
+#get line graph comparing pre-Covid admissions to Covid admissions for each age group
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group != "All ages", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, month, age_group) %>% 
   summarise(mean_admissions = mean(number_admissions),
             mean_20182019_admissions = mean(average20182019)) %>% 
   ggplot() +
     geom_line(aes(x = month,
                   y = mean_admissions), group = 1, colour = "red") +
-  geom_line(aes(x = month,
-                y = mean_20182019_admissions), group = 1, colour = "blue") +
-  facet_wrap(~hb_name, scales = "free_y")
+    geom_line(aes(x = month,
+                  y = mean_20182019_admissions), group = 1, colour = "blue") +
+    facet_wrap(~age_group)
 ```
+
+
+
+## HB SIMD dataset
+
+### Variables in dataset
 
 ```{r}
 hb_simd <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_simd_20220302.csv") %>% clean_names()
 ```
 
+```{r}
+hb_simd %>% names(
+)
+```
+
+## HB Specialty dataset
+
+### Variables in dataset
+
+```{r}
+hb_specialty <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_specialty_20220302.csv") %>% clean_names()
+```
+```{r}
+hb_specialty %>% names()
+```
+
+## HSCP Age/sex dataset
+
+### Variables in dataset
+
+```{r}
+hscp_agesex <- read_csv("raw_data/covid_raw_data/hospital_admissions_hscp_agesex_20220302.csv") %>% clean_names()
+```
+
+```{r}
+hscp_agesex %>% names()
+```
+Again, the HSCP code is not very helpful, it would be more useful to have the HSCP names and the HB they are tied to.
+
+```{r}
+#read in hscp names dataset
+hscp_names <- read_csv("raw_data/covid_raw_data/hscp_names.csv") %>% clean_names()
+
+#select the variables we need to add to the main table
+hscp_names <- hscp_names %>% 
+  select(hscp, hscp_name, hb, hb_name)
+```
+
+
+
+```{r}
+#join with hscp_names to get hscp and hb names
+
+hscp_agesex <- hscp_agesex %>% left_join(hscp_names, by = "hscp")
+
+```
+
+
+### Check to see if hb and hscp datasets are interchangable
+
+I noticed that HSCP and HB datasets contained the same variables and HSCP datasets contained the HB as well, so I thought that they might be interchangable since, in theory, when you group HSCP datasets by HB, the number of admissions should aggregate to the same numbers as the HB datasets since they are for the same time periods. This isn't the case. The HSCP dataset recorded higher numbers of admissions when aggregated by HB and compared with the HB dataset.
+
+```{r}
+#summarise no of admissions by sex/age_group for each HB
+hscp_agesex %>% 
+  group_by(hb, sex, age_group, admission_type) %>% 
+  summarise(total_admissions_by_sex = sum(number_admissions))
+```
+
+
+```{r}
+#summarise no of admissions by sex/age_group for each HB
+hb_agesex %>% 
+  group_by(hb, sex, age_group, admission_type) %>% 
+  summarise(total_admissions_by_sex = sum(number_admissions))
+```
+
+```{r}
+#check number of admissions in each dataset for a random HB for the same week_ending date
+hscp_agesex %>%
+  select(week_ending, hb, age_group, sex, admission_type, number_admissions) %>% 
+  filter(hb == "S08000015",
+         week_ending == "20200105") %>% 
+  group_by(week_ending, hb, sex, age_group, admission_type) %>% 
+  summarise(total_admissions = sum(number_admissions))
+
+hb_agesex %>%
+  select(week_ending, hb, age_group, sex, admission_type, number_admissions) %>%
+  filter(hb == "S08000015",
+         week_ending == "2020-01-05") %>% 
+  group_by(week_ending, hb, sex, age_group, admission_type) %>% 
+  summarise(total_admissions = sum(number_admissions))
+```
+
+We should ask which dataset should be considered "correct" - I would suggest selecting the HSCP datasets b/c the numbers are higher, which makes me think that some admissions weren't recorded in the HB dataset.
+
+
+
+Can we get the proportion for no of admissions to population in each HB or HSCP?
+This would allow us to carry out statistical tests to see if any HBs or HSCPs have a higher proportion of admissions compared with Scotland overall
