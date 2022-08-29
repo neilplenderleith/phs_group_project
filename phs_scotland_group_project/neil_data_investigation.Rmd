@@ -48,7 +48,8 @@ a_e_beds %>%
   theme(axis.text.x = element_text(angle = 45))
 
 
-a_e_beds
+a_e_beds %>% 
+  count(hb)
 ```
 
 ```{r}
@@ -213,14 +214,13 @@ age_sex %>%
 
  # shows the mean length of stay by age bracket for elective inpatients
 # can facet by sex 
-# age_sex %>% 
-#   filter(admission_type == "Elective Inpatients") %>% 
-#   group_by(quarter, age) %>% 
-#   summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
-#   ggplot(aes(x = quarter, y = avg_length_of_stay))+
-#   geom_col(aes(fill = age), position = "dodge")+
-#   theme(axis.text.x = element_text(angle = 45))+
-#   scale_x_date(breaks = 4)
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))
 #   #facet_wrap(~ sex)
 ```
 
@@ -396,6 +396,16 @@ simd %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_y_continuous(labels = scales::comma)
   
+#avg episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
   
 ```
 
