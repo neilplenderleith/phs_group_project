@@ -6,8 +6,9 @@ output: html_notebook
 library(tidyverse)
 library(scales)
 library(plotly)
+library(lubridate)
 ```
-
+# Beds
 ```{r}
 beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
 ```
@@ -19,6 +20,113 @@ beds %>%
   geom_line(aes(colour = hb), group = 1)+
   facet_wrap(~ hb)
 ```
+
+```{r}
+beds <- beds %>% 
+  select(-c(2,4,6,8,10,12,14,16,18,20)) %>% 
+  filter(!hb %in% c("SB0801", "S92000003"))
+
+beds <- beds %>% 
+  filter(!hb %in% c("SB0801", "S92000003")) %>% 
+  filter(hb == location)
+  
+# beds %>% 
+# count(specialty_name)
+
+a_e_beds <- beds %>% 
+  filter(specialty_name == "Accident & Emergency")
+```
+
+```{r}
+# a&e percentage occupancy by hb over time
+a_e_beds %>% 
+  group_by(quarter, hb) %>% 
+  summarise(mean_perc_occ = mean(percentage_occupancy, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(group = hb, colour = hb))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45))
+
+
+a_e_beds %>% 
+  count(hb)
+```
+
+```{r}
+#all time bed occupancy percentage for health boards
+a_e_beds %>% 
+  group_by(quarter, hb) %>% 
+  summarise(mean_perc_occ = mean(percentage_occupancy, na.rm = TRUE)) %>% 
+ungroup() %>% 
+  group_by(hb) %>% 
+  summarise(avg_per_occ_all_time = mean(mean_perc_occ)) %>% 
+  arrange(desc(avg_per_occ_all_time)) %>% 
+  ggplot(aes(x = hb, y = avg_per_occ_all_time))+
+  geom_col()+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+
+```{r}
+# workout the ten largest 
+ten_largest_specialities <- beds %>%
+  group_by(specialty_name) %>% 
+  summarise(mean_avail_staffed_beds = mean(average_available_staffed_beds)) %>% 
+  arrange(desc(mean_avail_staffed_beds)) %>% 
+  slice_max(mean_avail_staffed_beds, n=10) %>% 
+  select(1) %>% 
+  pull()
+
+
+
+# bed percentage availablity for top ten largest specialities
+beds %>%
+  filter(specialty_name %in% ten_largest_specialities) %>% 
+  group_by(quarter, specialty_name) %>%
+  summarise(mean_perc_occ = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(colour = specialty_name, group = specialty_name))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+# bed percentage availablity for all acute
+  beds %>%
+  filter(specialty_name == "All Acute") %>% 
+  group_by(quarter, specialty_name) %>%
+  summarise(mean_perc_occ = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(colour = specialty_name, group = specialty_name))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  # bed percentage availability for intensive care
+beds %>%
+  filter(specialty_name == "Intensive Care Medicine") %>% 
+  group_by(quarter, specialty_name) %>%
+  summarise(mean_perc_occ = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(colour = specialty_name, group = specialty_name))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  
+  
+```
+
+
+
+```{r}
+a_e_beds %>% 
+  group_by(quarter) %>% 
+  summarise(mean_available_beds = mean(average_available_staffed_beds, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = mean_available_beds))+
+  geom_line(group ="1")+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
 
 -----------------------------------------------
 
@@ -100,20 +208,19 @@ age_sex %>%
   group_by(quarter, age) %>% 
   summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
   ggplot(aes(x = quarter, y = avg_length_of_stay))+
-  geom_line(aes(colour = age))+
+  geom_line(aes(colour = age, group = age))+
   theme(axis.text.x = element_text(angle = 45))
   #facet_wrap( ~ sex)
 
  # shows the mean length of stay by age bracket for elective inpatients
 # can facet by sex 
-# age_sex %>% 
-#   filter(admission_type == "Elective Inpatients") %>% 
-#   group_by(quarter, age) %>% 
-#   summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
-#   ggplot(aes(x = quarter, y = avg_length_of_stay))+
-#   geom_col(aes(fill = age), position = "dodge")+
-#   theme(axis.text.x = element_text(angle = 45))+
-#   scale_x_date(breaks = 4)
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))
 #   #facet_wrap(~ sex)
 ```
 
@@ -289,6 +396,16 @@ simd %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_y_continuous(labels = scales::comma)
   
+#avg episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
   
 ```
 
@@ -344,7 +461,8 @@ speciality_averages %>%
 ```{r}
 ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
-glimpse(ae_wait_times)
+#glimpse(ae_wait_times)
+
 
 #make a date and year column with the first date of every month
 ae_wait_times <- ae_wait_times %>% 
@@ -443,7 +561,7 @@ target_2018 <- ae_wait_times %>%
 ```{r}
 library(sf)
 
-scotland <- st_read("../../../../Downloads/SG_NHS_HealthBoards_2019/SG_NHS_HealthBoards_2019.shp")
+scotland <- st_read("../SG_NHS_HealthBoards_2019_shapefile/SG_NHS_HealthBoards_2019.shp")
 
 # view(scotland)
 # 
@@ -468,6 +586,7 @@ ggplot(data = scotland) +
 ggplot(data = scotland) +
     geom_sf(aes(fill = target_2018)) +
     scale_fill_viridis_c(option = "plasma")+
+  theme_void()+
   labs(title = "Percent of A&E depts making the 4hr target")
 ```
 
@@ -478,6 +597,8 @@ geom_sf(fill = "green")+
 ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 3, color = "black", fontface = "bold") +
   theme_void()
 ```
+
+
 ```{r}
 
 library(sf)
@@ -507,6 +628,8 @@ scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
 ```
 
 ```{r}
-library(dash)
+covid_age_sex <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_agesex_20220302.csv")
+
+head(covid_age_sex)
 ```
 
