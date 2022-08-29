@@ -299,6 +299,33 @@ age_sex %>%
   geom_point(aes(colour = age), size = 0.5)+
   labs(title = "Elective inpatient by age and avg length of stay")
 ```
+
+```{r}
+# emergency inpatient by age and avg length of epsiode
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_episode))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Emergency inpatient by age and avg length of episode")
+
+# elective inpatient by age and avg length of episode
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_episode))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Elective inpatient by age and avg length of episode")
+```
+
 ```{r}
 # emergency inpatient by age and avg episodes
 age_sex %>% 
@@ -322,7 +349,7 @@ age_sex %>%
   theme(axis.text.x = element_text(angle = 45))+
   #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
   geom_point(aes(colour = age), size = 0.5)+
-  labs(title = "Emergency inpatient by age and avg episodes")
+  labs(title = "Elective inpatient by age and avg episodes")
 ```
 
 
@@ -396,17 +423,67 @@ simd %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_y_continuous(labels = scales::comma)
   
-#avg episodes(hospitalisations?) by simd value
+#avg number of episodes(hospitalisations?) by simd value
 simd %>% 
   drop_na(simd) %>%
   mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
   group_by(quarter, simd) %>% 
-  summarise(avg_episodes = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
   ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
   geom_line(aes(colour = simd))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_y_continuous(labels = scales::comma)
+
+#avg stays by simd value
+simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_stays = mean(stays, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stays, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
   
+```
+```{r}
+#total episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(total_episodes = sum(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = total_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+  
+#avg number of episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+
+#avg stays by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_stays = mean(stays, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stays, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+  
+
 ```
 
 
