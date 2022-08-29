@@ -586,6 +586,7 @@ ggplot(data = scotland) +
 ggplot(data = scotland) +
     geom_sf(aes(fill = target_2018)) +
     scale_fill_viridis_c(option = "plasma")+
+  theme_void()+
   labs(title = "Percent of A&E depts making the 4hr target")
 ```
 
