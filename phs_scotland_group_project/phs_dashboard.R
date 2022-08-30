@@ -24,6 +24,12 @@ all_years <- ae_wait_times %>%
 all_discharges = c("Admission to Same Facility", "Other Speciality", "Transfer to Residence", "Transfer to other NHS Facility", "Unknown")
 
 all_healthboards = c("All Scotland", "Glasgow")
+
+all_ages = c("0-9 years", "10-19 years", "20-29 years", "30-39 years", "40-49 years", "50-59 years", "60-69 years", "70-79 years", "80-89 years", "90 years and older")
+
+all_sex = c("Female", "Male")
+
+all_simd = c("1", "2", "3", "4", "5")
 # ui ----------------------------------------------------------------------
 
 ui <- navbarPage(
@@ -158,39 +164,134 @@ ui <- navbarPage(
   
   tabPanel(tags$h5("Age Group"),
            
-           
-           
+           sidebarLayout(
+             
+             sidebarPanel = sidebarPanel(
+               
+               width = 4,
+               
+               titlePanel(tags$h1("Age Demographic Plot Controls")),
+               
+               checkboxGroupInput(
+                 inputId = "age_groups",
+                 label = tags$h3("Select Patient Age Group(s)"),
+                 choices = all_ages
+               ),
+               
+               sliderInput(inputId = "age_year",
+                           label = tags$h2("Year range"),
+                           min = 2016,
+                           max = 2022,
+                           value = c(2016, 2022),
+                           step = 1,
+                           sep = ""
+               )
+             ),
+             
+             mainPanel = mainPanel(
+               
+               box(
+                 width = 8,
+                 title = "AGE PLOT",
+                 status = "success",
+                 solidHeader = TRUE,
+                 plotOutput("age_plot")
+               )
+             )
+           )
   ),
   
   
   tabPanel(tags$h5("Sex"),
            
-           
-           
+           sidebarLayout(
+             
+             sidebarPanel = sidebarPanel(
+               
+               width = 4,
+               
+               titlePanel(tags$h1("Sex Demographic Plot Controls")),
+               
+               checkboxGroupInput(
+                 inputId = "sex_groups",
+                 label = tags$h3("Select Patient Sex"),
+                 choices = all_sex
+               ),
+               
+               sliderInput(inputId = "sex_year",
+                           label = tags$h2("Year range"),
+                           min = 2016,
+                           max = 2022,
+                           value = c(2016, 2022),
+                           step = 1,
+                           sep = ""
+               )
+             ),
+             
+             mainPanel = mainPanel(
+               
+               box(
+                 width = 8,
+                 title = "SEX PLOT",
+                 status = "success",
+                 solidHeader = TRUE,
+                 plotOutput("sex_plot")
+               )
+             )
+           )
   ),
   
   
   tabPanel(tags$h5("SIMD"),
            
-           
-           
+           sidebarLayout(
+             
+             sidebarPanel = sidebarPanel(
+               
+               width = 4,
+               
+               titlePanel(tags$h1("SIMD Demographic Plot Controls")),
+               
+               checkboxGroupInput(
+                 inputId = "simd_groups",
+                 label = tags$h3("Select Patient SIMD"),
+                 choices = all_simd
+               ),
+               
+               sliderInput(inputId = "simd_year",
+                           label = tags$h2("Year range"),
+                           min = 2016,
+                           max = 2022,
+                           value = c(2016, 2022),
+                           step = 1,
+                           sep = ""
+               )
+               
+             ),
+             
+             mainPanel = mainPanel(
+               
+               box(
+                 width = 8,
+                 title = "SIMD PLOT",
+                 status = "success",
+                 solidHeader = TRUE,
+                 plotOutput("simd_plot")
+               )
+             )
+           )
   ),
   
   
   tabPanel(tags$h5("Geospatial Maps"),
            
            
-           
   ),
   
   
   tabPanel(tags$h5("Data"),
-           
-           
-           
+           DT::dataTableOutput("table_output")
   )
-  
-  
 )
 
 
