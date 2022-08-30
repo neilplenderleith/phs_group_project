@@ -10,17 +10,16 @@ library(lubridate)
 
 # data wrangling ----------------------------------------------------------
 
-waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
-waiting_times <- waiting_times %>% 
+ae_wait_times <- ae_wait_times %>% 
   mutate(date = ym(month),
          year = year(date))
 
-all_years <- waiting_times %>% 
+all_years <- ae_wait_times %>% 
   distinct(year) %>% 
   arrange(year) %>% 
   pull()
-
 
 
 # ui ----------------------------------------------------------------------
@@ -95,7 +94,12 @@ ui <- navbarPage(
                  title = "Plot Comparison Controls",
                  status = "primary",
                  solidHeader = TRUE,
-                 
+                 dateRangeInput(inputId = "winter_wait",
+                                label = "Date range",
+                                start = as_date("2007-04-01"),
+                                end = as_date("2022-10-01"),
+                                min = as_date("2007-04-01"),
+                                max = as_date("2022-10-01"))
                )
              ),
              
