@@ -10,13 +10,24 @@ library(lubridate)
 
 # data wrangling ----------------------------------------------------------
 
-ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
+waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
-ae_wait_times <- ae_wait_times %>% 
+waiting_times <- waiting_times %>% 
   mutate(date = ym(month),
          year = year(date))
 
-all_years <- ae_wait_times %>% 
+waiting_times <- waiting_times %>% 
+  mutate(
+    "Admission to Same Facility" = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
+  ) %>% 
+  mutate("Other Speciality" = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
+  mutate("Transfer to Residence" = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
+  mutate("Transfer to other NHS Facility" = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
+  mutate("Unknown" = (discharge_destination_unknown/number_of_attendances_aggregate))
+
+waiting_times %>% names()
+
+all_years <- waiting_times %>% 
   distinct(year) %>% 
   arrange(year) %>% 
   pull()
@@ -127,7 +138,7 @@ ui <- navbarPage(
                  title = "WINTER PLOT",
                  status = "primary",
                  solidHeader = TRUE,
-                 width = 8,
+                 width = 12,
                  
                  plotOutput("winter_plot")
                )
@@ -159,7 +170,7 @@ ui <- navbarPage(
                  title = "COVID PLOT",
                  status = "primary",
                  solidHeader = TRUE,
-                 width = 8,
+                 width = 12,
                  
                  plotOutput("covid_plot")
                )
@@ -197,7 +208,7 @@ ui <- navbarPage(
              mainPanel = mainPanel(
                
                box(
-                 width = 8,
+                 width = 12,
                  title = "AGE PLOT",
                  status = "success",
                  solidHeader = TRUE,
@@ -238,7 +249,7 @@ ui <- navbarPage(
              mainPanel = mainPanel(
                
                box(
-                 width = 8,
+                 width = 12,
                  title = "SEX PLOT",
                  status = "success",
                  solidHeader = TRUE,
@@ -280,7 +291,7 @@ ui <- navbarPage(
              mainPanel = mainPanel(
                
                box(
-                 width = 8,
+                 width = 12,
                  title = "SIMD PLOT",
                  status = "success",
                  solidHeader = TRUE,
@@ -313,6 +324,38 @@ server <- function(input, output) {
     valueBox(
       paste0(96, "%"), "Waiting Time % Less Than 4 Hours", color = "light-blue", icon = icon("hospital"), width = 12
     )
+  })
+  
+  
+  filtered_winter_plot <- reactive({
+    winter1 <- sym(input$discharge_destination)
+    waiting_times %>%
+      filter(!is.na(!!winter1)) %>% 
+      group_by(date) %>% 
+      summarise(mean_discharge = mean(!!winter1))
+  })
+  
+  output$winter_plot <- renderPlot({
+    filtered_winter_plot() %>% 
+      ggplot(aes(x = date,
+                 y = mean_discharge)) +
+      geom_line() +
+      scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+      geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
   })
   
 }
