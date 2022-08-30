@@ -21,14 +21,16 @@ all_years <- ae_wait_times %>%
   arrange(year) %>% 
   pull()
 
+all_discharges = c("Admission to Same Facility", "Other Speciality", "Transfer to Residence", "Transfer to other NHS Facility", "Unknown")
 
+all_healthboards = c("All Scotland", "Glasgow")
 # ui ----------------------------------------------------------------------
 
 ui <- navbarPage(
   
   theme = bs_theme(bootswatch = "flatly"),
   
-  title = "Public Health Scotland Dashboard Project",
+  title = tags$h4("Public Health Scotland Dashboard Project"),
   
   header = tagList(
     useShinydashboard()
@@ -38,7 +40,7 @@ ui <- navbarPage(
   
   fluid = TRUE,
   
-  tabPanel("A&E Overview",
+  tabPanel(tags$h5("A&E Overview"),
            
            
            
@@ -85,71 +87,104 @@ ui <- navbarPage(
   ),
   
   
-  tabPanel("Winter Crisis",
+  tabPanel(tags$h5("Winter Crisis"),
            
            sidebarLayout(
              
              sidebarPanel = sidebarPanel(
+               
+               width = 4,
+               
+               titlePanel(tags$h1("Winter Crisis Plot Controls")),
+               
+               sliderInput(inputId = "winter_wait",
+                           label = tags$h2("Year range"),
+                           min = 2016,
+                           max = 2022,
+                           value = c(2016, 2022),
+                           step = 1,
+                           sep = ""
+               ),
+               
+               radioButtons(inputId = "discharge_destination",
+                            label = tags$h2("Patient Discharge Destination"),
+                            choices = all_discharges
+               )
+             ),
+             
+             mainPanel = mainPanel(
                box(
-                 title = "Plot Comparison Controls",
+                 title = "WINTER PLOT",
                  status = "primary",
                  solidHeader = TRUE,
-                 dateRangeInput(inputId = "winter_wait",
-                                label = "Date range",
-                                start = as_date("2007-04-01"),
-                                end = as_date("2022-10-01"),
-                                min = as_date("2007-04-01"),
-                                max = as_date("2022-10-01"))
+                 width = 8,
+                 plotOutput("winter_plot")
+               )
+             )
+           )
+  ),
+  
+  
+  tabPanel(tags$h5("Impact of COVID-19"),
+           
+           sidebarLayout(
+             
+             sidebarPanel = sidebarPanel(
+               
+               width = 4,
+               
+               titlePanel(tags$h1("A&E Admissions Plot Controls")),
+               
+               radioButtons(
+                 inputId = "health_boards",
+                 label = tags$h3("Select Health Board"),
+                 choices = all_healthboards
                )
              ),
              
              mainPanel = mainPanel(
                
-               plotOutput("winter_plot")
+               box(
+                 title = "COVID PLOT",
+                 status = "primary",
+                 solidHeader = TRUE,
+                 width = 8,
+                 plotOutput("covid_plot")
+               )
              )
            )
+  ),
+  
+  
+  tabPanel(tags$h5("Age Group"),
            
            
            
   ),
   
   
-  tabPanel("Impact of COVID-19",
+  tabPanel(tags$h5("Sex"),
            
            
            
   ),
   
   
-  tabPanel("Age Group",
+  tabPanel(tags$h5("SIMD"),
            
            
            
   ),
   
   
-  tabPanel("Sex",
+  tabPanel(tags$h5("Geospatial Maps"),
            
            
            
   ),
   
   
-  tabPanel("SIMD",
-           
-           
-           
-  ),
-  
-  
-  tabPanel("Geospatial Maps",
-           
-           
-           
-  ),
-  
-  
-  tabPanel("Data",
+  tabPanel(tags$h5("Data"),
            
            
            
