@@ -402,10 +402,19 @@ scotland <-  scotland %>%
 
 scotland <- st_transform(x, '+proj=longlat +datum=WGS84')
 
+pal <- colorNumeric("viridis", NULL)
 
 m <- leaflet() 
 m %>% addTiles() %>% 
-  addPolygons(data=scotland)
-
+  addPolygons(data=scotland,
+              smoothFactor = 0.3, 
+              fillOpacity = 1,
+              fillColor = ~pal(target_2007),
+              label = ~paste0( HBName,": ", target_2007),
+              weight = 1, 
+              highlightOptions = highlightOptions(color = "white", 
+                                                            weight = 2, 
+                                                            bringToFront = TRUE)) %>% 
+  addLegend(pal = pal, values = scotland$target_2007, opacity = 1, )
 ```
 
