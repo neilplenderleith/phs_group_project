@@ -130,6 +130,7 @@ a_e_beds %>%
 
 -----------------------------------------------
 
+# age sex
 ```{r}
 age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
 
@@ -620,6 +621,86 @@ target_2007 <- ae_wait_times %>%
   ungroup() %>% 
   select(hbt,ae_target_2007)
 
+target_2008 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2008) %>% 
+  rename(ae_target_2008 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2008)
+
+target_2009 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2009) %>% 
+  rename(ae_target_2009 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2009)
+
+target_2010 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2010) %>% 
+  rename(ae_target_2010 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2010)
+
+target_2011 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2011) %>% 
+  rename(ae_target_2011 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2011)
+
+target_2012 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2012) %>% 
+  rename(ae_target_2012 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2012)
+
+target_2013 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2013) %>% 
+  rename(ae_target_2013 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2013)
+
+target_2014 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2014) %>% 
+  rename(ae_target_2014 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2014)
+
+target_2015 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2015) %>% 
+  rename(ae_target_2015 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2015)
+
+target_2016 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2016) %>% 
+  rename(ae_target_2016 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2016)
+
+target_2017 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2017) %>% 
+  rename(ae_target_2017 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2017)
+
 target_2018 <- ae_wait_times %>%
   group_by(year, hbt) %>% 
   summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
@@ -627,6 +708,30 @@ target_2018 <- ae_wait_times %>%
   rename(ae_target_2018 = ae_4hr_target_achieved) %>% 
   ungroup() %>% 
   select(hbt,ae_target_2018)
+
+target_2019 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2019) %>% 
+  rename(ae_target_2019 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2019)
+
+target_2020 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2020) %>% 
+  rename(ae_target_2020 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2020)
+
+target_2021 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2021) %>% 
+  rename(ae_target_2021 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2021)
 
 ```
 
@@ -651,8 +756,21 @@ scotland <-  scotland %>%
     mutate(lat = st_coordinates(centres)[,1],
            long = st_coordinates(centres)[,2],
            target_2007 = target_2007$ae_target_2007,
+           target_2008 = target_2008$ae_target_2008,
+           target_2009 = target_2009$ae_target_2009,
+           target_2010 = target_2010$ae_target_2010,
+           target_2011 = target_2011$ae_target_2011,
+           target_2012 = target_2012$ae_target_2012,
+           target_2013 = target_2013$ae_target_2013,
+           target_2014 = target_2014$ae_target_2014,
+           target_2015 = target_2015$ae_target_2015,
+           target_2016 = target_2016$ae_target_2016,
+           target_2017 = target_2017$ae_target_2017,
            target_2018 = target_2018$ae_target_2018,
-           change_ae = target_2007 - target_2018)
+           target_2019 = target_2019$ae_target_2019,
+           target_2020 = target_2020$ae_target_2020,
+           target_2021 = target_2021$ae_target_2021
+                  )
 
 ggplot(data = scotland) +
     geom_sf(aes(fill = change_ae)) +
@@ -671,7 +789,7 @@ ggplot(data = scotland) +
 ```{r}
 ggplot(data = scotland) +
 geom_sf(fill = "green")+
-ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 3, color = "black", fontface = "bold") +
+ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 2, color = "black", fontface = "bold") +
   theme_void()
 ```
 
@@ -704,9 +822,22 @@ scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
   
 ```
 
+-----------------------------------------------------
+
+
 ```{r}
 covid_age_sex <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_agesex_20220302.csv")
 
 head(covid_age_sex)
+```
+
+```{r}
+library(leaflet)
+
+data(quakes)
+
+# Show first 20 rows from the `quakes` dataset
+leaflet(data = quakes[1:20,]) %>% addTiles() %>%
+  addMarkers(~long, ~lat, popup = ~as.character(mag))
 ```
 

@@ -1,0 +1,240 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(scales)
+library(plotly)
+library(lubridate)
+library(sf)
+```
+
+
+
+## Covid Tab
+```{r}
+#loads in beds and add year column
+beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
+
+beds %>% 
+mutate(date = yq(quarter),
+         year = year(date))
+```
+
+
+```{r}
+# bed percentage availablity for "all acute"
+# Will need to add filter for year based on user input
+beds_plotly <- beds %>%
+  filter(specialty_name == "All Acute") %>% 
+  group_by(quarter, specialty_name) %>%
+  summarise(mean_perc_occ = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(colour = specialty_name, group = specialty_name))+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs(title = "Mean bed availability for all Acute Patients",
+       x = "\nYear and Quarter",
+       y = "Average Percentage Occupancy")
+
+ggplotly(beds_plotly) %>% config(displayModeBar = FALSE)
+  
+
+```
+
+##Scotland Shapefile
+#### ae_wait_times wrangling
+```{r}
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
+
+#glimpse(ae_wait_times)
+
+
+#make a date and year column with the first date of every month
+ae_wait_times <- ae_wait_times %>% 
+  mutate(date = ym(month), .after = month,
+         year = year(date))
+
+#make a percent column with percent of patients meeting the 4hr target time
+ae_wait_times <- ae_wait_times %>% 
+  mutate(percent_4hr_target_achieved = (number_meeting_target_aggregate/number_of_attendances_aggregate)*100)
+
+target_2007 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2007) %>% 
+  rename(ae_target_2007 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2007)
+
+target_2008 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2008) %>% 
+  rename(ae_target_2008 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2008)
+
+target_2009 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2009) %>% 
+  rename(ae_target_2009 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2009)
+
+target_2010 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2010) %>% 
+  rename(ae_target_2010 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2010)
+
+target_2011 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2011) %>% 
+  rename(ae_target_2011 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2011)
+
+target_2012 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2012) %>% 
+  rename(ae_target_2012 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2012)
+
+target_2013 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2013) %>% 
+  rename(ae_target_2013 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2013)
+
+target_2014 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2014) %>% 
+  rename(ae_target_2014 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2014)
+
+target_2015 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2015) %>% 
+  rename(ae_target_2015 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2015)
+
+target_2016 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2016) %>% 
+  rename(ae_target_2016 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2016)
+
+target_2017 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2017) %>% 
+  rename(ae_target_2017 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2017)
+
+target_2018 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2018) %>% 
+  rename(ae_target_2018 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2018)
+
+target_2019 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2019) %>% 
+  rename(ae_target_2019 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2019)
+
+target_2020 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2020) %>% 
+  rename(ae_target_2020 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2020)
+
+target_2021 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2021) %>% 
+  rename(ae_target_2021 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2021)
+  
+```
+
+#### shape file wrangling
+```{r}
+scotland <- st_read("../SG_NHS_HealthBoards_2019_shapefile/SG_NHS_HealthBoards_2019.shp")
+
+# make a smaller version for performance issues
+scotland_smaller <- scotland %>% 
+  st_simplify(TRUE, dTolerance = 2000)
+#fixes problems caused by above 
+scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
+
+#add in the A&E 4 hr target data for each year
+scotland_smaller <-  scotland_smaller %>% 
+  mutate(centres = st_centroid(st_make_valid(geometry))) %>%
+    mutate(lat = st_coordinates(centres)[,1],
+           long = st_coordinates(centres)[,2],
+           target_2007 = target_2007$ae_target_2007,
+           target_2008 = target_2008$ae_target_2008,
+           target_2009 = target_2009$ae_target_2009,
+           target_2010 = target_2010$ae_target_2010,
+           target_2011 = target_2011$ae_target_2011,
+           target_2012 = target_2012$ae_target_2012,
+           target_2013 = target_2013$ae_target_2013,
+           target_2014 = target_2014$ae_target_2014,
+           target_2015 = target_2015$ae_target_2015,
+           target_2016 = target_2016$ae_target_2016,
+           target_2017 = target_2017$ae_target_2017,
+           target_2018 = target_2018$ae_target_2018,
+           target_2019 = target_2019$ae_target_2019,
+           target_2020 = target_2020$ae_target_2020,
+           target_2021 = target_2021$ae_target_2021
+                  )
+
+# ggplot(data = scotland_smaller) +
+#   geom_sf(aes(fill = target_2018)) + # will need to change this filter depending on a drop down
+#   scale_fill_viridis_c(option = "plasma")+
+#   theme_void()+
+#   labs(title = "Percent of A&E depts making the 4hr target")
+
+
+p <- ggplot(scotland_smaller) + 
+  geom_sf(aes(fill = target_2018, 
+              text = paste("<b>", HBName, "</b>\n", round(target_2018, digits = 2),"%", sep = ""))) + 
+  scale_fill_viridis_c(option = "plasma", name = "4Hr A&E Target %")+
+  theme_void()+
+  labs(title = "Percent of A&E depts making the 4hr target")
+
+p %>%
+  ggplotly(tooltip = "text") %>%
+  style(hoverlabel = list(bgcolor = "white"), hoveron = "fill")%>% 
+  config(displayModeBar = FALSE)
+```
+
+
+
+
+
