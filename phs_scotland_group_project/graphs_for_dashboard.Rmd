@@ -361,7 +361,7 @@ sex_plotly <- age_sex %>%
        x = "\nYear and Quarter",
        y = "Average Episodes\n")+
   theme_minimal()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
 
 ggplotly(sex_plotly, hovertemplate = ) %>% 
@@ -392,14 +392,20 @@ library(leaflet)
 scotland_smaller <-  readOGR("../SG_NHS_HealthBoards_2019_shapefile/",layer = "SG_NHS_HealthBoards_2019")
 shapeData <- spTransform(scotland_smaller, CRS("+proj=longlat +ellps=GRS80"))
 
-x = st_read("")  
+x = st_read("clean_data/shapefile/scotland_smaller.gpkg")  
 
-st_transform(x, '+proj=longlat +datum=WGS84')
+scotland <-  scotland %>% 
+  mutate(centres = st_centroid(st_make_valid(geometry))) %>%
+    mutate(lat = st_coordinates(centres)[,1],
+           long = st_coordinates(centres)[,2])
+
+
+scotland <- st_transform(x, '+proj=longlat +datum=WGS84')
 
 
 m <- leaflet() 
 m %>% addTiles() %>% 
-  addPolygons(data=scotland_smaller)
+  addPolygons(data=scotland)
 
 ```
 
