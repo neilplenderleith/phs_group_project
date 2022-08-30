@@ -48,7 +48,8 @@ a_e_beds %>%
   theme(axis.text.x = element_text(angle = 45))
 
 
-a_e_beds
+a_e_beds %>% 
+  count(hb)
 ```
 
 ```{r}
@@ -129,6 +130,7 @@ a_e_beds %>%
 
 -----------------------------------------------
 
+# age sex
 ```{r}
 age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
 
@@ -213,14 +215,13 @@ age_sex %>%
 
  # shows the mean length of stay by age bracket for elective inpatients
 # can facet by sex 
-# age_sex %>% 
-#   filter(admission_type == "Elective Inpatients") %>% 
-#   group_by(quarter, age) %>% 
-#   summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
-#   ggplot(aes(x = quarter, y = avg_length_of_stay))+
-#   geom_col(aes(fill = age), position = "dodge")+
-#   theme(axis.text.x = element_text(angle = 45))+
-#   scale_x_date(breaks = 4)
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_stay))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))
 #   #facet_wrap(~ sex)
 ```
 
@@ -299,6 +300,33 @@ age_sex %>%
   geom_point(aes(colour = age), size = 0.5)+
   labs(title = "Elective inpatient by age and avg length of stay")
 ```
+
+```{r}
+# emergency inpatient by age and avg length of epsiode
+age_sex %>% 
+  filter(admission_type == "Emergency Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.arm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_episode))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Emergency inpatient by age and avg length of episode")
+
+# elective inpatient by age and avg length of episode
+age_sex %>% 
+  filter(admission_type == "Elective Inpatients") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_episode))+
+  geom_line(aes(colour = age, group = age))+
+  theme(axis.text.x = element_text(angle = 45))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(aes(colour = age), size = 0.5)+
+  labs(title = "Elective inpatient by age and avg length of episode")
+```
+
 ```{r}
 # emergency inpatient by age and avg episodes
 age_sex %>% 
@@ -322,7 +350,7 @@ age_sex %>%
   theme(axis.text.x = element_text(angle = 45))+
   #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
   geom_point(aes(colour = age), size = 0.5)+
-  labs(title = "Emergency inpatient by age and avg episodes")
+  labs(title = "Elective inpatient by age and avg episodes")
 ```
 
 
@@ -379,7 +407,7 @@ age_sex %>%
 
 
 
-
+# SIMD
 
 ```{r}
 simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% janitor::clean_names()
@@ -396,7 +424,67 @@ simd %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_y_continuous(labels = scales::comma)
   
+#avg number of episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+
+#avg stays by simd value
+simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_stays = mean(stays, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stays, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
   
+```
+```{r}
+#total episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(total_episodes = sum(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = total_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+  
+#avg number of episodes(hospitalisations?) by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+
+#avg stays by simd value
+simd %>% 
+  drop_na(simd) %>%
+  filter(admission_type == "Emergency Inpatients") %>% 
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_stays = mean(stays, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_stays, group = simd))+
+  geom_line(aes(colour = simd))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)
+  
+
 ```
 
 
@@ -533,6 +621,86 @@ target_2007 <- ae_wait_times %>%
   ungroup() %>% 
   select(hbt,ae_target_2007)
 
+target_2008 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2008) %>% 
+  rename(ae_target_2008 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2008)
+
+target_2009 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2009) %>% 
+  rename(ae_target_2009 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2009)
+
+target_2010 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2010) %>% 
+  rename(ae_target_2010 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2010)
+
+target_2011 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2011) %>% 
+  rename(ae_target_2011 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2011)
+
+target_2012 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2012) %>% 
+  rename(ae_target_2012 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2012)
+
+target_2013 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2013) %>% 
+  rename(ae_target_2013 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2013)
+
+target_2014 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2014) %>% 
+  rename(ae_target_2014 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2014)
+
+target_2015 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2015) %>% 
+  rename(ae_target_2015 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2015)
+
+target_2016 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2016) %>% 
+  rename(ae_target_2016 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2016)
+
+target_2017 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2017) %>% 
+  rename(ae_target_2017 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2017)
+
 target_2018 <- ae_wait_times %>%
   group_by(year, hbt) %>% 
   summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
@@ -540,6 +708,30 @@ target_2018 <- ae_wait_times %>%
   rename(ae_target_2018 = ae_4hr_target_achieved) %>% 
   ungroup() %>% 
   select(hbt,ae_target_2018)
+
+target_2019 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2019) %>% 
+  rename(ae_target_2019 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2019)
+
+target_2020 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2020) %>% 
+  rename(ae_target_2020 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2020)
+
+target_2021 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = mean(percent_4hr_target_achieved, na.rm = TRUE)) %>% 
+  filter(year == 2021) %>% 
+  rename(ae_target_2021 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2021)
 
 ```
 
@@ -564,8 +756,21 @@ scotland <-  scotland %>%
     mutate(lat = st_coordinates(centres)[,1],
            long = st_coordinates(centres)[,2],
            target_2007 = target_2007$ae_target_2007,
+           target_2008 = target_2008$ae_target_2008,
+           target_2009 = target_2009$ae_target_2009,
+           target_2010 = target_2010$ae_target_2010,
+           target_2011 = target_2011$ae_target_2011,
+           target_2012 = target_2012$ae_target_2012,
+           target_2013 = target_2013$ae_target_2013,
+           target_2014 = target_2014$ae_target_2014,
+           target_2015 = target_2015$ae_target_2015,
+           target_2016 = target_2016$ae_target_2016,
+           target_2017 = target_2017$ae_target_2017,
            target_2018 = target_2018$ae_target_2018,
-           change_ae = target_2007 - target_2018)
+           target_2019 = target_2019$ae_target_2019,
+           target_2020 = target_2020$ae_target_2020,
+           target_2021 = target_2021$ae_target_2021
+                  )
 
 ggplot(data = scotland) +
     geom_sf(aes(fill = change_ae)) +
@@ -576,6 +781,7 @@ ggplot(data = scotland) +
 ggplot(data = scotland) +
     geom_sf(aes(fill = target_2018)) +
     scale_fill_viridis_c(option = "plasma")+
+  theme_void()+
   labs(title = "Percent of A&E depts making the 4hr target")
 ```
 
@@ -583,7 +789,7 @@ ggplot(data = scotland) +
 ```{r}
 ggplot(data = scotland) +
 geom_sf(fill = "green")+
-ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 3, color = "black", fontface = "bold") +
+ggrepel::geom_text_repel(aes(x = lat , y = long, label = paste(HBCode, HBName, sep = "\n")), min.segment.length = 0.05,size = 2, color = "black", fontface = "bold") +
   theme_void()
 ```
 
@@ -616,9 +822,22 @@ scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
   
 ```
 
+-----------------------------------------------------
+
+
 ```{r}
 covid_age_sex <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_agesex_20220302.csv")
 
 head(covid_age_sex)
+```
+
+```{r}
+library(leaflet)
+
+data(quakes)
+
+# Show first 20 rows from the `quakes` dataset
+leaflet(data = quakes[1:20,]) %>% addTiles() %>%
+  addMarkers(~long, ~lat, popup = ~as.character(mag))
 ```
 

@@ -101,14 +101,32 @@ beds_select <- beds %>%
 
 
 ```{r}
+beds_select %>% 
+  filter(hb == "S92000003")
+```
+
+
+```{r}
 beds_select %>%
-  filter(!is.na(percentage_occupancy)) %>% 
+  filter(!is.na(percentage_occupancy),
+         specialty_name == "All Acute") %>% 
   group_by(quarter) %>% 
   summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>% 
   ggplot(aes(x = quarter,
              y = mean_percentage_occupancy)) +
   geom_point() +
   geom_line(group = 1)
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_percentage_occupancy)) +
+  geom_col() 
 ```
 
 
@@ -169,6 +187,59 @@ beds_select %>%
   summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>% 
   ggplot(aes(x = quarter,
              y = mean_percentage_occupancy)) +
+  geom_point() +
+  geom_line(aes(group = hb, colour = hb))
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(quarter, specialty_name, hb) %>% 
+  summarise(mean_percentage_occupancy = mean(percentage_occupancy)) %>%
+  filter(mean_percentage_occupancy > 50) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_percentage_occupancy)) +
+  geom_point() +
+  geom_line(aes(group = specialty_name, colour = specialty_name)) +
+  theme(legend.position = "none") +
+  facet_wrap(~ hb)
+```
+
+
+```{r}
+beds_select %>% 
+  distinct(specialty_name)
+```
+
+
+```{r}
+beds_select %>% 
+  filter(specialty_name %in% c("All Acute", "Accident & Emergency", "Intensive Care Medicine")) %>% 
+  group_by(quarter, specialty_name) %>% 
+  summarise(mean_pct = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_pct)) +
+  geom_point() +
+  geom_line(aes(group = specialty_name, colour = specialty_name))
+```
+
+
+```{r}
+beds_select %>% 
+  filter(location == "S08000019",
+         quarter == "2017Q1")
+```
+
+
+```{r}
+beds_select %>%
+  filter(!is.na(percentage_occupancy),
+         percentage_occupancy == 100) %>% 
+  group_by(quarter, hb) %>% 
+  summarise(mean_avg_occupied_beds = mean(average_occupied_beds)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_occupied_beds)) +
   geom_point() +
   geom_line(aes(group = hb, colour = hb))
 ```
@@ -289,6 +360,22 @@ beds_select %>%
   group_by(season) %>% 
   summarise(count = n())
 ```
+
+
+
+```{r}
+beds_select %>% 
+  filter(specialty_name == "Accident & Emergency") %>%
+  group_by(quarter) %>% 
+  summarise(mean_pct = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_pct)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -299,6 +386,18 @@ beds_select %>%
 
 ```{r}
 simd_treatment <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% clean_names()
+```
+
+
+```{r}
+simd_treatment <- simd_treatment %>% 
+  mutate(simd = as.factor(simd))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(hb == "S92000003")
 ```
 
 
@@ -328,9 +427,20 @@ simd_treatment %>%
 
 ```{r}
 simd_treatment %>% 
+  filter(!is.na(average_length_of_stay)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_stay)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+```{r}
+simd_treatment %>% 
   filter(!is.na(average_length_of_stay),
          simd == 5) %>% 
-  mutate(simd = replace_na(simd, 0)) %>% 
   group_by(quarter, simd) %>% 
   summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
   ggplot(aes(x = quarter,
@@ -358,7 +468,6 @@ simd_treatment %>%
 ```{r}
 simd_treatment %>% 
   filter(!is.na(average_length_of_stay)) %>% 
-  mutate(simd = replace_na(simd, 0)) %>% 
   group_by(quarter, simd) %>% 
   summarise(mean_avg_stay = mean(average_length_of_stay)) %>% 
   ggplot(aes(x = quarter,
@@ -395,6 +504,18 @@ simd_treatment %>%
 
 ```{r}
 simd_treatment %>% 
+  filter(!is.na(average_length_of_episode)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_avg_epidsode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_avg_epidsode)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+```{r}
+simd_treatment %>% 
   filter(!is.na(average_length_of_episode),
          simd == 5) %>% 
   group_by(quarter) %>% 
@@ -417,6 +538,485 @@ simd_treatment %>%
   geom_point() +
   geom_line(group = 1)
 ```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(episodes)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(mean_epidsode = mean(episodes)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_epidsode)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(is.na(simd))
+```
+
+
+```{r}
+simd_treatment %>% 
+  filter(!is.na(stays)) %>% 
+  group_by(quarter, simd) %>% 
+  summarise(total_stays = sum(stays)) %>% 
+  ggplot(aes(x = quarter,
+             y = total_stays)) +
+  geom_point() +
+  geom_line(aes(group = simd, colour = simd))
+```
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+```{r}
+age_and_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>%  clean_names()
+```
+
+
+```{r}
+age_and_sex <- age_and_sex %>% 
+  mutate(sex = as.factor(sex))
+```
+
+
+```{r}
+age_and_sex %>% 
+  filter(sex == "Female",
+         age == "0-9 years")
+```
+
+
+```{r}
+age_and_sex %>%
+  filter(!is.na(average_length_of_stay)) %>% 
+  group_by(quarter) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = avg_length_of_stay)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+age_and_sex %>% 
+  group_by(quarter, age) %>% 
+  summarise(length_of_stay = mean(length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = length_of_stay)) +
+  geom_point() +
+  geom_line(aes(group = age,
+                colour = age))
+```
+
+
+```{r}
+age_and_sex %>%
+  filter(!is.na(average_length_of_stay)) %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_stay = mean(average_length_of_stay)) %>% 
+  ggplot(aes(x = quarter,
+             y = avg_length_of_stay)) +
+  geom_point() +
+  geom_line(aes(group = age,
+                colour = age))
+```
+
+
+```{r}
+age_and_sex %>%
+  filter(!is.na(average_length_of_episode),
+         age == "10-19 years",
+         sex == "Female") %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = avg_length_of_episode)) +
+  geom_point() +
+  geom_line(aes(group = age,
+                colour = age))
+```
+
+
+```{r}
+age_and_sex %>%
+  filter(!is.na(average_length_of_episode)) %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = avg_length_of_episode)) +
+  geom_point() +
+  geom_line(aes(group = age,
+                colour = age))
+```
+
+
+
+```{r}
+age_and_sex %>%
+  filter(!is.na(average_length_of_episode)) %>% 
+  group_by(quarter, sex) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = avg_length_of_episode)) +
+  geom_point() +
+  geom_line(aes(group = sex,
+                colour = sex))
+```
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+
+```{r}
+speciality <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_specialty.csv") %>% clean_names()
+```
+
+
+```{r}
+speciality %>% 
+  filter(hb == "S92000003")
+```
+
+
+```{r}
+speciality %>% 
+  group_by(quarter) %>% 
+  summarise(mean_length_of_episode = mean(length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_length_of_episode)) +
+  geom_point() +
+  geom_line(group = 1) 
+```
+
+
+```{r}
+speciality %>% 
+  group_by(quarter) %>% 
+  summarise(mean_length_of_episode = mean(length_of_episode)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_length_of_episode)) +
+  geom_point() +
+  geom_line(group = 1) 
+```
+
+
+```{r}
+speciality %>% 
+  group_by(quarter) %>% 
+  summarise(mean_length_of_spell = mean(length_of_spell)) %>% 
+  ggplot(aes(x = quarter,
+             y = mean_length_of_spell)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+```{r}
+waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% clean_names()
+```
+
+
+```{r}
+waiting_times <- waiting_times %>% 
+  mutate(date = ym(month),
+         quarter = quarter(date))
+```
+
+
+```{r}
+waiting_times %>% 
+  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
+  group_by(date) %>% 
+  summarise(mean_pct = mean(pct)) %>% 
+  ggplot(aes(x = date,
+             y = mean_pct)) +
+  geom_line() +
+  geom_smooth()
+```
+
+
+```{r}
+waiting_times %>% 
+  filter(department_type == "Emergency Department") %>% 
+  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
+  group_by(date) %>% 
+  summarise(mean_pct = mean(pct)) %>% 
+  ggplot(aes(x = date,
+             y = mean_pct)) +
+  geom_line() +
+  geom_smooth()
+```
+
+
+```{r}
+waiting_times %>% 
+  filter(department_type == "Minor Injury Unit or Other") %>% 
+  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
+  group_by(date) %>% 
+  summarise(mean_pct = mean(pct)) %>% 
+  ggplot(aes(x = date,
+             y = mean_pct)) +
+  geom_line() +
+  geom_smooth()
+```
+
+
+
+```{r}
+waiting_times <- waiting_times %>% 
+  mutate(
+    prop_admission_to_same = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
+  ) %>% 
+  mutate(prop_other_speciality = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
+  mutate(prop_residence = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
+  mutate(prop_transfer = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
+  mutate(prop_unknown = (discharge_destination_unknown/number_of_attendances_aggregate)) 
+```
+
+```{r}
+waiting_times %>% 
+  filter(!is.na(prop_admission_to_same)) %>% 
+  group_by(date) %>% 
+  summarise(mean_admission_to_same = mean(prop_admission_to_same)) %>% 
+  ggplot(aes(x = date,
+         y = mean_admission_to_same)) +
+  geom_line() +
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+
+waiting_times %>% 
+  filter(!is.na(prop_other_speciality)) %>% 
+  group_by(date) %>% 
+  summarise(mean_other_speciality = mean(prop_other_speciality)) %>% 
+  ggplot(aes(x = date,
+         y = mean_other_speciality)) +
+  geom_line() +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+
+waiting_times %>% 
+  filter(!is.na(prop_residence)) %>% 
+  group_by(date) %>% 
+  summarise(mean_residence = mean(prop_residence)) %>% 
+  ggplot(aes(x = date,
+         y = mean_residence)) +
+  geom_line()+
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+
+waiting_times %>% 
+  filter(!is.na(prop_transfer)) %>% 
+  group_by(date) %>% 
+  summarise(mean_transfer = mean(prop_transfer)) %>% 
+  ggplot(aes(x = date,
+         y = mean_transfer)) +
+  geom_line() +
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+
+waiting_times %>% 
+  filter(!is.na(prop_unknown)) %>% 
+  group_by(date) %>% 
+  summarise(mean_unknown = mean(prop_unknown)) %>% 
+  ggplot(aes(x = date,
+         y = mean_unknown)) +
+  geom_line() +
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+```
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+
+
+```{r}
+library(fable)
+```
+
+
+```{r}
+beds_fore <- beds_select %>%
+  mutate(quarter = yearquarter(date)) %>% 
+  filter(!is.na(percentage_occupancy)) %>% 
+  group_by(quarter) %>% 
+  summarise(mean_pct = mean(percentage_occupancy))
+
+
+beds_fore <- as_tsibble(beds_fore, index = quarter, validate = FALSE) %>% 
+  select(quarter, mean_pct)
+
+beds_fore <- beds_fore %>% 
+  filter_index(~ "2019 Q4")
+
+beds_fore %>% 
+  autoplot(mean_pct)
+```
+
+
+```{r}
+fit <- beds_fore %>% 
+  model(
+    snaive = SNAIVE(mean_pct),
+    mean_model = MEAN(mean_pct),
+    arima = ARIMA(mean_pct)
+  )
+```
+
+
+```{r}
+forecast_1 <- fit %>% 
+  fabletools::forecast(h=12)
+
+forecast_1
+```
+
+
+```{r}
+forecast_1 %>% 
+  autoplot(beds_fore) +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+
+
+
+```{r}
+wait_fore <- waiting_times %>% 
+  mutate(month = ym(month),
+         month = yearmonth(month)) %>% 
+  filter(!is.na(prop_residence)) %>% 
+  group_by(month) %>% 
+  summarise(mean_prop_residence = mean(prop_residence))
+
+wait_fore <- as_tsibble(wait_fore, index = month, validate = FALSE)
+
+wait_fore <- wait_fore %>% 
+  filter_index(~ "2019-12-01")
+
+wait_fore %>% 
+  autoplot(mean_prop_residence)
+```
+
+
+```{r}
+fit_wait <- wait_fore %>% 
+  model(
+    snaive = SNAIVE(mean_prop_residence),
+    mean_model = MEAN(mean_prop_residence),
+    arima = ARIMA(mean_prop_residence)
+  )
+```
+
+
+```{r}
+forecast_wait <- fit_wait %>% 
+  fabletools::forecast(h=30)
+
+forecast_wait
+```
+
+
+
+```{r}
+forecast_wait %>% 
+  autoplot(wait_fore) +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+
 
 
 
