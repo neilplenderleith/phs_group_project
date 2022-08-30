@@ -57,18 +57,20 @@ ui <- navbarPage(
                status = "primary",
                solidHeader = FALSE,
                valueBoxOutput(outputId = "percent_ae",
-                              width = 6),
+                              width = 12),
                selectInput(inputId = "date_choice",
-                           label = "Date",
-                           choices = c("2020", "2021"))
+                           label = tags$h4("Date"),
+                           choices = c("2020", "2021")
+                           )
              ),
              
              box(
-               title = NULL,
+               title = tags$h3("Year of A&E Wait Times"),
                status = "warning",
-               solidHeader = FALSE,
+               solidHeader = TRUE,
+               
                selectInput(inputId = "year_choice",
-                           label = tags$h3("Year"),
+                           label = NULL,
                            choices = all_years)
              )
            ),
@@ -79,6 +81,7 @@ ui <- navbarPage(
                title = "A&E LINE GRAPH",
                status = "primary",
                solidHeader = TRUE,
+               
                plotOutput("ae_wait_times")
              ),
              
@@ -86,6 +89,7 @@ ui <- navbarPage(
                title = "SCOTLAND MAP",
                status = "warning",
                solidHeader = TRUE,
+               
                plotOutput("ae_map")
              )
            )
@@ -124,6 +128,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 8,
+                 
                  plotOutput("winter_plot")
                )
              )
@@ -155,6 +160,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 8,
+                 
                  plotOutput("covid_plot")
                )
              )
@@ -195,6 +201,7 @@ ui <- navbarPage(
                  title = "AGE PLOT",
                  status = "success",
                  solidHeader = TRUE,
+                 
                  plotOutput("age_plot")
                )
              )
@@ -235,6 +242,7 @@ ui <- navbarPage(
                  title = "SEX PLOT",
                  status = "success",
                  solidHeader = TRUE,
+                 
                  plotOutput("sex_plot")
                )
              )
@@ -276,6 +284,7 @@ ui <- navbarPage(
                  title = "SIMD PLOT",
                  status = "success",
                  solidHeader = TRUE,
+                 
                  plotOutput("simd_plot")
                )
              )
@@ -302,7 +311,7 @@ server <- function(input, output) {
   
   output$percent_ae <- renderValueBox({
     valueBox(
-      paste0(96, "%"), "Waiting Time % Less Than 4 Hours", color = "aqua", icon = icon("hospital"), width = 6
+      paste0(96, "%"), "Waiting Time % Less Than 4 Hours", color = "light-blue", icon = icon("hospital"), width = 12
     )
   })
   
