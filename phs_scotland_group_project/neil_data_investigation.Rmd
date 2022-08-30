@@ -306,7 +306,7 @@ age_sex %>%
 age_sex %>% 
   filter(admission_type == "Emergency Inpatients") %>% 
   group_by(quarter, age) %>% 
-  summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.arm = TRUE)) %>% 
   ggplot(aes(x = quarter, y = avg_length_of_episode))+
   geom_line(aes(colour = age, group = age))+
   theme(axis.text.x = element_text(angle = 45))+
@@ -407,7 +407,7 @@ age_sex %>%
 
 
 
-
+# SIMD
 
 ```{r}
 simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% janitor::clean_names()
