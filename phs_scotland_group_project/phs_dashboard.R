@@ -27,9 +27,13 @@ all_years <- waiting_times %>%
 
 ui <- navbarPage(
   
-  theme = bs_theme(bootswatch = "united"),
+  theme = bs_theme(bootswatch = "flatly"),
   
   title = "Public Health Scotland Dashboard Project",
+  
+  header = tagList(
+    useShinydashboard()
+  ),
   
   position = "static-top",
   
@@ -37,16 +41,28 @@ ui <- navbarPage(
   
   tabPanel("A&E Overview",
            
+           
+           
            fluidRow(
              
-             column(6,
-                    infoBox(value = "96%", title =tags$h3("Waiting Time"), subtitle = NULL, icon = icon(name = "heart", lib = "font-awesome"))     
+             box(
+               title = NULL,
+               status = "primary",
+               solidHeader = FALSE,
+               valueBoxOutput(outputId = "percent_ae",
+                              width = 6),
+               selectInput(inputId = "date_choice",
+                           label = "Date",
+                           choices = c("2020", "2021"))
              ),
              
-             column(6,
-                    selectInput(inputId = "year_choice",
-                                label = tags$h3("Year"),
-                                choices = all_years)
+             box(
+               title = NULL,
+               status = "warning",
+               solidHeader = FALSE,
+               selectInput(inputId = "year_choice",
+                           label = tags$h3("Year"),
+                           choices = all_years)
              )
            ),
            
@@ -55,67 +71,85 @@ ui <- navbarPage(
              box(
                title = "A&E LINE GRAPH",
                status = "primary",
+               solidHeader = TRUE,
                plotOutput("ae_wait_times")
              ),
              
              box(
                title = "SCOTLAND MAP",
                status = "warning",
+               solidHeader = TRUE,
                plotOutput("ae_map")
              )
            )
-           
            
   ),
   
   
   tabPanel("Winter Crisis",
            
+           sidebarLayout(
+             
+             sidebarPanel = sidebarPanel(
+               box(
+                 title = "Plot Comparison Controls",
+                 status = "primary",
+                 solidHeader = TRUE,
+                 
+               )
+             ),
+             
+             mainPanel = mainPanel(
+               
+               plotOutput("winter_plot")
+             )
+           )
            
            
-           ),
+           
+  ),
   
   
   tabPanel("Impact of COVID-19",
            
            
            
-           ),
+  ),
   
   
   tabPanel("Age Group",
            
            
            
-           ),
+  ),
   
   
   tabPanel("Sex",
            
            
            
-           ),
+  ),
   
   
   tabPanel("SIMD",
            
            
            
-           ),
+  ),
   
   
   tabPanel("Geospatial Maps",
            
            
            
-           ),
+  ),
   
   
   tabPanel("Data",
            
            
            
-           )
+  )
   
   
 )
@@ -126,7 +160,11 @@ ui <- navbarPage(
 
 server <- function(input, output) {
   
-  
+  output$percent_ae <- renderValueBox({
+    valueBox(
+      paste0(96, "%"), "Waiting Time % Less Than 4 Hours", color = "aqua", icon = icon("hospital"), width = 6
+    )
+  })
   
 }
 
