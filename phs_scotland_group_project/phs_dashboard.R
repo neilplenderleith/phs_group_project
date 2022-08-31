@@ -65,9 +65,17 @@ all_ages <- age %>%
 min_year_age <- min(age$year)
 max_year_age <- max(age$year)
 
-all_healthboards = c("All Scotland", "Glasgow")
+sex <- read_csv("clean_data/non_covid_data/age_sex.csv")
 
-all_sex = c("Female", "Male")
+all_sex <- sex %>% 
+  distinct(sex) %>% 
+  arrange(sex) %>% 
+  pull()
+
+min_year_sex <- min(sex$year)
+max_year_sex <- max(sex$year)
+
+all_healthboards = c("All Scotland", "Glasgow")
 
 all_simd = c("1", "2", "3", "4", "5")
 # ui ----------------------------------------------------------------------
@@ -264,14 +272,15 @@ ui <- navbarPage(
                checkboxGroupInput(
                  inputId = "sex_groups",
                  label = tags$h3("Select Patient Sex"),
-                 choices = all_sex
+                 choices = all_sex,
+                 selected = all_sex
                ),
                
                sliderInput(inputId = "sex_year",
                            label = tags$h2("Year range"),
-                           min = 2016,
-                           max = 2022,
-                           value = c(2016, 2022),
+                           min = min_year_sex,
+                           max = max_year_sex,
+                           value = c(min_year_sex, max_year_sex),
                            step = 1,
                            sep = ""
                )
@@ -285,7 +294,7 @@ ui <- navbarPage(
                  status = "success",
                  solidHeader = TRUE,
                  
-                 plotOutput("sex_plot")
+                 plotlyOutput("sex_plot")
                )
              )
            )
@@ -448,6 +457,35 @@ server <- function(input, output) {
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     
     ggplotly(age_plotly, tooltip = "text") %>% 
+      config(displayModeBar = FALSE)
+  })
+  
+  filtered_sex_plot <- reactive({
+    sex %>% 
+    filter(year >= input$sex_year[1] & year <= input$sex_year[2],
+           sex == input$sex_groups) %>% 
+      group_by(quarter, sex) %>% 
+      summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE))
+  })
+  
+  output$sex_plot <- renderPlotly({
+    sex_plotly <- filtered_sex_plot() %>% 
+      # group_by(quarter, sex) %>% 
+      # summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+      ggplot(aes(x = quarter, y = avg_length_of_episode))+
+      geom_line(aes(colour = sex, group = sex))+
+      geom_point(aes(colour = sex, 
+                     text = paste0("Date: ", quarter, "<br>", 
+                                   "Gender: ", sex)),
+                 size = 0.5)+
+      labs(title = "Average Hospital Episodes by Gender\n",
+           x = "\nYear and Quarter",
+           y = "Average Episodes\n")+
+      theme_minimal()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    
+    ggplotly(sex_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE)
   })
   
