@@ -12,27 +12,45 @@ library(lubridate)
 
 waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
+
 waiting_times <- waiting_times %>% 
   mutate(date = ym(month),
+         quarter = quarter(date),
          year = year(date))
 
 waiting_times <- waiting_times %>% 
   mutate(
-    "Admission to Same Facility" = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
+    prop_admission_to_same = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
   ) %>% 
-  mutate("Other Speciality" = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
-  mutate("Transfer to Residence" = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
-  mutate("Transfer to other NHS Facility" = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
-  mutate("Unknown" = (discharge_destination_unknown/number_of_attendances_aggregate))
+  mutate(prop_other_speciality = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
+  mutate(prop_residence = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
+  mutate(prop_transfer = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
+  mutate(prop_unknown = (discharge_destination_unknown/number_of_attendances_aggregate))
 
-waiting_times %>% names()
+waiting_times <- waiting_times %>% 
+  pivot_longer(cols = prop_admission_to_same:prop_unknown, names_to = "discharge_destination", values_to = "discharge_proportion")
+
+waiting_times <- waiting_times %>% 
+  mutate(discharge_destination = case_when(
+    str_detect(discharge_destination, "prop_admission_to_same") ~ "Admission to Same Facility",
+    str_detect(discharge_destination, "prop_other_speciality") ~ "Transfer to Other Facility",
+    str_detect(discharge_destination, "prop_residence") ~ "Transfer to Residence",
+    str_detect(discharge_destination, "prop_transfer") ~ "Transfer to Private Facility",
+    str_detect(discharge_destination, "prop_unknown") ~ "Unknown"
+  ))
+
+min_year_wait <- min(waiting_times$year)
+max_year_wait <- max(waiting_times$year)
 
 all_years <- waiting_times %>% 
   distinct(year) %>% 
   arrange(year) %>% 
   pull()
 
-all_discharges = c("Admission to Same Facility", "Other Speciality", "Transfer to Residence", "Transfer to other NHS Facility", "Unknown")
+all_discharges <- waiting_times %>% 
+  distinct(discharge_destination) %>% 
+  arrange(discharge_destination) %>% 
+  pull()
 
 all_healthboards = c("All Scotland", "Glasgow")
 
@@ -120,9 +138,9 @@ ui <- navbarPage(
                
                sliderInput(inputId = "winter_wait",
                            label = tags$h2("Year range"),
-                           min = 2016,
-                           max = 2022,
-                           value = c(2016, 2022),
+                           min = min_year_wait,
+                           max = max_year_wait,
+                           value = c(min_year_wait, max_year_wait),
                            step = 1,
                            sep = ""
                ),
@@ -328,11 +346,12 @@ server <- function(input, output) {
   
   
   filtered_winter_plot <- reactive({
-    winter1 <- sym(input$discharge_destination)
     waiting_times %>%
-      filter(!is.na(!!winter1)) %>% 
+      filter(discharge_destination == input$discharge_destination,
+             !is.na(discharge_proportion),
+             year >= input$winter_wait[1] & year <= input$winter_wait[2]) %>% 
       group_by(date) %>% 
-      summarise(mean_discharge = mean(!!winter1))
+      summarise(mean_discharge = mean(discharge_proportion))
   })
   
   output$winter_plot <- renderPlot({
