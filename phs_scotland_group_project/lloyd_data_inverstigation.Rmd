@@ -730,6 +730,13 @@ speciality %>%
 ################################################################################
 ################################################################################
 
+```{r}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+
 
 ```{r}
 waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% clean_names()
@@ -744,45 +751,6 @@ waiting_times <- waiting_times %>%
 
 
 ```{r}
-waiting_times %>% 
-  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
-  group_by(date) %>% 
-  summarise(mean_pct = mean(pct)) %>% 
-  ggplot(aes(x = date,
-             y = mean_pct)) +
-  geom_line() +
-  geom_smooth()
-```
-
-
-```{r}
-waiting_times %>% 
-  filter(department_type == "Emergency Department") %>% 
-  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
-  group_by(date) %>% 
-  summarise(mean_pct = mean(pct)) %>% 
-  ggplot(aes(x = date,
-             y = mean_pct)) +
-  geom_line() +
-  geom_smooth()
-```
-
-
-```{r}
-waiting_times %>% 
-  filter(department_type == "Minor Injury Unit or Other") %>% 
-  mutate(pct = number_meeting_target_aggregate / number_of_attendances_aggregate * 100) %>%
-  group_by(date) %>% 
-  summarise(mean_pct = mean(pct)) %>% 
-  ggplot(aes(x = date,
-             y = mean_pct)) +
-  geom_line() +
-  geom_smooth()
-```
-
-
-
-```{r}
 waiting_times <- waiting_times %>% 
   mutate(
     prop_admission_to_same = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
@@ -795,45 +763,46 @@ waiting_times <- waiting_times %>%
 
 
 ```{r}
-waiting_times <- waiting_times %>% 
-  mutate(
-    prop_admission_to_same = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
-  ) %>% 
-  mutate(prop_other_speciality = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
-  mutate(prop_residence = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
-  mutate(prop_transfer = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
-  mutate(prop_unknown = (discharge_destination_unknown/number_of_attendances_aggregate)) 
+waiting_times <- waiting_times %>%
+  pivot_longer(cols = prop_admission_to_same:prop_unknown, names_to = "discharge_destination", values_to = "discharge_proportion")
+
+waiting_times <- waiting_times %>%
+  mutate(discharge_destination = case_when(
+    str_detect(discharge_destination, "prop_admission_to_same") ~ "Admission to Same Facility",
+    str_detect(discharge_destination, "prop_other_speciality") ~ "Transfer to Other Facility",
+    str_detect(discharge_destination, "prop_residence") ~ "Transfer to Residence",
+    str_detect(discharge_destination, "prop_transfer") ~ "Transfer to Private Facility",
+    str_detect(discharge_destination, "prop_unknown") ~ "Unknown"
+  ))
 ```
 
+
+
 ```{r}
-wait <- waiting_times %>% 
-  mutate("Admission to Same Facility" = (discharge_destination_admission_to_same/number_of_attendances_aggregate))
-
-col1 <- sym("Admission to Same Facility")
-
-wait %>% 
-  filter(!is.na(!!col1)) %>% 
+waiting_times %>% 
+  filter(discharge_destination == "Admission to Same Facility",
+         !is.na(discharge_proportion)) %>% 
   group_by(date) %>% 
-  summarise(mean_admission_to_same = mean(!!col1)) %>% 
+  summarise(mean_admission_to_same = mean(discharge_proportion)) %>% 
   ggplot(aes(x = date,
          y = mean_admission_to_same)) +
   geom_line() +
   scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
-  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
-  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)
 ```
 
 
