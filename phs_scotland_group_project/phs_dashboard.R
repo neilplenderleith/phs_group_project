@@ -222,7 +222,8 @@ ui <- navbarPage(
                checkboxGroupInput(
                  inputId = "age_groups",
                  label = tags$h3("Select Patient Age Group(s)"),
-                 choices = all_ages
+                 choices = all_ages,
+                 selected = all_ages
                ),
                
                sliderInput(inputId = "age_year",
@@ -390,7 +391,7 @@ server <- function(input, output) {
   }, height = 500)
   
   output$ae_wait_times_plot <- renderPlotly({
-    for_plotly <- ae_wait_times %>% 
+    ae_wait_plotly <- ae_wait_times %>% 
       filter(department_type == "Emergency Department") %>% 
       group_by(date, department_type) %>% 
       summarise(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
@@ -418,13 +419,14 @@ server <- function(input, output) {
            y = "Percentage",
            colour = "Department Type")
     
-    ggplotly(for_plotly)
+    ggplotly(ae_wait_plotly)
   })
   
   filtered_age_plot <- reactive({
     age %>% 
-      filter(year >= input$age_year[1] & year <= input$age_year[2]) %>% 
-      group_by(quarter, input$age_groups) %>% 
+      filter(year >= input$age_year[1] & year <= input$age_year[2],
+             age == input$age_groups) %>% 
+      group_by(quarter, age) %>% 
       summarise(avg_episodes = mean(episodes, na.rm = TRUE))
   })
   
