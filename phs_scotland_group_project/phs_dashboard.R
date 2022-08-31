@@ -9,6 +9,10 @@ library(shinyWidgets)
 library(lubridate)
 library(plotly)
 library(leaflet)
+library(sf)
+library(scales)
+library(here)
+here()
 
 
 # data wrangling ----------------------------------------------------------
@@ -88,6 +92,50 @@ all_simd_year <- hb_simd %>%
   arrange(year) %>% 
   pull()
 
+scotland <- st_read("clean_data/shapefile/scotland_smaller.gpkg")
+
+#transform so leaflet is happy with it
+scotland <- st_transform(scotland, '+proj=longlat +datum=WGS84')
+
+#rename columns to allow easier shiny running
+scotland <- scotland %>%
+  dplyr::rename(`2007` = target_2007,
+                `2008` = target_2008,
+                `2009` = target_2009,
+                `2010` = target_2010,
+                `2011` = target_2011,
+                `2012` = target_2012,
+                `2013` = target_2013,
+                `2014` = target_2014,
+                `2015` = target_2015,
+                `2016` = target_2016,
+                `2017` = target_2017,
+                `2018` = target_2018,
+                `2019` = target_2019,
+                `2020` = target_2020,
+                `2021` = target_2021
+  )
+#pivot longer to allow filtering for user input
+scotland <- scotland %>% 
+  pivot_longer(cols = "2007":"2021", names_to = "target_years", values_to = "percentage")
+
+scotland_years <- scotland %>% 
+  distinct(target_years) %>% 
+  arrange(target_years) %>% 
+  pull()
+
+min_scotland_year <- min(scotland$target_years)
+max_scotland_year <- max(scotland$target_years)
+
+hb_agesex <- read_csv("clean_data/covid_agesex.csv")
+
+all_hb_ages <- hb_agesex %>%
+  filter(age_group != "All ages") %>% 
+  distinct(age_group) %>% 
+  arrange(age_group) %>% 
+  pull()
+
+
 # ui ----------------------------------------------------------------------
 
 ui <- navbarPage(
@@ -112,7 +160,7 @@ ui <- navbarPage(
                title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
                status = "primary",
                solidHeader = TRUE,
-               height = 600,
+               height = 750,
                
                plotlyOutput("ae_wait_times_plot")
              ),
@@ -121,9 +169,17 @@ ui <- navbarPage(
                title = tags$h3("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
                status = "warning",
                solidHeader = TRUE,
-               height = 600,
+               height = 750,
                
-               plotOutput("ae_map")
+               sliderInput(inputId = "leaflet_year_slider",
+                           label = "Please Select Year",
+                           min = 2007,
+                           max = 2021,
+                           sep = "",
+                           value = 2007
+                           ),
+               
+               leafletOutput("scotlandmap", height = "53vh", width = "45vw")
              )
            )
            
@@ -227,6 +283,15 @@ ui <- navbarPage(
                            value = c(min_year_age, max_year_age),
                            step = 1,
                            sep = ""
+               ),
+               
+               titlePanel(tags$h1("Accute Patient Bed Availability Controls")),
+               
+               checkboxGroupInput(
+                 inputId = "hb_age_groups",
+                 label = tags$h3("Select Patient Age Group(s)"),
+                 choices = all_hb_ages,
+                 selected = all_hb_ages
                )
              ),
              
@@ -240,6 +305,16 @@ ui <- navbarPage(
                  height = 600,
                  
                  plotlyOutput("age_plot")
+               ),
+               
+               box(
+                 width = 12,
+                 title = tags$h3("Mean Bed Availability for all Acute Patients"),
+                 status = "success",
+                 solidHeader = TRUE,
+                 height = 600,
+                 
+                 plotlyOutput("hb_age_plot")
                )
              )
            )
@@ -476,6 +551,41 @@ server <- function(input, output) {
     ggplotly(ae_wait_plotly)
   })
   
+  #reactive to filter for user input
+  scotland_filtered <- reactive({
+    scotland %>%
+      filter(target_years == input$leaflet_year_slider)
+
+  })
+  # palette
+  pal <- colorNumeric(
+    palette = "viridis",
+    domain = scotland$percentage
+  )
+
+
+  output$scotlandmap <- renderLeaflet({
+    m <- leaflet()
+    m %>% addTiles() %>%
+      addPolygons(data=scotland_filtered(),
+                  smoothFactor = 0.3,
+                  fillOpacity = 1,
+                  fillColor = ~pal(percentage),#fill by percentage of 4hr target
+                  label = ~paste0(HBName,"<br>",
+                                  percentage, "%", "<br>",
+                                  target_years) %>% lapply(htmltools::HTML),
+                  weight = 1,
+                  highlightOptions = highlightOptions(color = "white",
+                                                      weight = 2,
+                                                      bringToFront = TRUE)) %>%
+      setView(-4, 57, zoom = 5.5) %>%
+      addLegend(pal = pal,
+                values = scotland$percentage,
+                opacity = 0.5,
+                title = "% A&E meeting<br> 4hr target")
+
+  })
+  
   filtered_covid_plot <- reactive({
     covid_ae_attendances %>% 
       filter(hb_name == input$health_boards)
@@ -579,6 +689,51 @@ server <- function(input, output) {
     
     ggplotly(age_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE)
+  })
+  
+  # view(hb_agesex)
+  
+  filtered_hb_age_plot <- reactive({
+    hb_agesex %>% 
+      filter(age_group %in% input$hb_age_groups) %>% 
+      filter(admission_type == "Emergency",
+             hb_name == "All Scotland") %>% 
+      group_by(hb_name, age_group, is_winter) %>% 
+      summarise(mean_admissions = mean(number_admissions),
+                mean_20182019_admissions = mean(average20182019))
+    
+  })
+  
+  output$hb_age_plot <- renderPlotly({
+    covid_age_plotly <- filtered_hb_age_plot() %>% 
+      ggplot() +
+      geom_col(aes(x = ordered(age_group, levels = c("Under 5",
+                                                     "5 - 14",
+                                                     "15 - 44",
+                                                     "45 - 64",
+                                                     "65 - 74",
+                                                     "75 - 84",
+                                                     "85 and over")),
+                   y = mean_admissions, 
+                   fill = if_else(is_winter == TRUE,
+                                  "Winter", "Not winter"),
+                   text = paste0("Age group: ", age_group,
+                                 "<br>",
+                                 "Average number of admissions: ", 
+                                 round(mean_admissions),
+                                 "<br>",
+                                 "2018/2019 avg admissions: ", 
+                                 round(mean_20182019_admissions))), 
+               position = "dodge") +
+      labs(title = "Comparison between winter and non-winter months",
+           x = "\n Age group",
+           y = "Mean number of admissions",
+           fill = "Season")
+    
+    covid_age_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE) 
+    
   })
   
   filtered_sex_plot <- reactive({
@@ -685,91 +840,91 @@ server <- function(input, output) {
   })
   
   filtered_simd_map <- reactive({
-    hb_simd %>% 
+    hb_simd %>%
       filter(simd_quintile == input$simd_map,
-             year == input$simd_map_year) %>% 
-      filter(admission_type == "Emergency") %>% 
-        mutate(week_ending = ymd(week_ending)) %>% 
+             year == input$simd_map_year) %>%
+      filter(admission_type == "Emergency") %>%
+        mutate(week_ending = ymd(week_ending)) %>%
         mutate(month = month(week_ending, label = TRUE),
-               year = year(week_ending), .after = week_ending) %>% 
-      group_by(hb_name, year, simd_quintile) %>% 
+               year = year(week_ending), .after = week_ending) %>%
+      group_by(hb_name, year, simd_quintile) %>%
       summarise(mean_admissions = mean(number_admissions)*100)
   })
-  
-  
+
+
   output$simd_leaflet <- renderLeaflet({
     filtered_simd_map() %>%
-      
-      leaflet() %>% 
-      addTiles() %>% 
-      setView(-4, 55.5, zoom = 7) %>% 
-      addCircleMarkers(lng = -4.975, 
-                       lat = 55.445, 
+
+      leaflet() %>%
+      addTiles() %>%
+      setView(-4, 55.5, zoom = 7) %>%
+      addCircleMarkers(lng = -4.975,
+                       lat = 55.445,
                        color = "red",
                        popup="Ayrshire and Arran",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -2.83333000, 
-                       lat = 55.58333000, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -2.83333000,
+                       lat = 55.58333000,
                        color = "red",
                        popup="Borders",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.857784, 
-                       lat = 54.988285, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.857784,
+                       lat = 54.988285,
                        color = "red",
                        popup="Dumfries and Galloway",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.78535, 
-                       lat = 56.0021, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.78535,
+                       lat = 56.0021,
                        color = "red",
                        popup="Forth Valley",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -2.988, 
-                       lat = 57.228, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -2.988,
+                       lat = 57.228,
                        color = "red",
                        popup="Grampian",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -4.71, 
-                       lat = 57.12, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -4.71,
+                       lat = 57.12,
                        color = "red",
                        popup="Highland",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.083999664, 
-                       lat = 55.905496378, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.083999664,
+                       lat = 55.905496378,
                        color = "red",
                        popup="Lothian",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.0, 
-                       lat = 59.0, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.0,
+                       lat = 59.0,
                        color = "red",
                        popup="Orkney",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -1.2689, 
-                       lat = 60.3038, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -1.2689,
+                       lat = 60.3038,
                        color = "red",
                        popup="Shetland",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -7.02, 
-                       lat =  57.76, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -7.02,
+                       lat =  57.76,
                        color = "red",
                        popup="Western Isles",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.1999992, 
-                       lat =    56.249999, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.1999992,
+                       lat =    56.249999,
                        color = "red",
                        popup="Fife",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.7333304, 
-                       lat = 56.6999972, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.7333304,
+                       lat = 56.6999972,
                        color = "red",
                        popup="Tayside",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -4.4057, 
-                       lat = 55.90137, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -4.4057,
+                       lat = 55.90137,
                        color = "red",
                        popup="Greater Glasgow and Clyde",
-                       radius = hb_simd$mean_admissions, weight = 1) %>% 
-      addCircleMarkers(lng = -3.83333, 
-                       lat = 55.583331, 
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.83333,
+                       lat = 55.583331,
                        color = "red",
                        popup="Lanarkshire",
                        radius = hb_simd$mean_admissions, weight = 1)
