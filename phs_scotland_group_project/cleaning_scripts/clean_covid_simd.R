@@ -4,10 +4,11 @@ library(tidyverse)
 library(janitor)
 library(lubridate)
 library(leaflet)
+library(here)
 
-hb_simd <- read_csv("../Desktop/Codeclan/phs_scotland_group_project/phs_scotland_group_project/raw_data/covid_raw_data/hospital_admissions_hb_simd_20220302.csv") %>% 
+hb_simd <- read_csv(here("../Desktop/Codeclan/phs_scotland_group_project/phs_scotland_group_project/raw_data/covid_raw_data/hospital_admissions_hb_simd_20220302.csv")) %>% 
   clean_names()
-board_names <- read_csv("../Desktop/Codeclan/phs_scotland_group_project/phs_scotland_group_project/raw_data/covid_raw_data/health_board_names.csv") %>% 
+board_names <- read_csv(here("../Desktop/Codeclan/phs_scotland_group_project/phs_scotland_group_project/raw_data/covid_raw_data/health_board_names.csv")) %>% 
   clean_names()
 
 hb_simd
