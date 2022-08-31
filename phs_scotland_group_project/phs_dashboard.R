@@ -78,8 +78,6 @@ max_year_sex <- max(sex$year)
 
 simd <- read_csv("clean_data/non_covid_data/simd.csv")
 
-view(simd)
-
 all_simd <- simd %>%
   drop_na(simd) %>% 
   distinct(simd) %>% 
@@ -91,8 +89,6 @@ max_year_simd <- max(simd$year)
 
 all_healthboards = c("All Scotland", "Glasgow")
 
-
-pal <- colorNumeric("viridis", NULL) # set colour palette
 
 # ui ----------------------------------------------------------------------
 
@@ -118,7 +114,7 @@ ui <- navbarPage(
                title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
                status = "primary",
                solidHeader = TRUE,
-               height = 500,
+               height = 600,
                
                plotlyOutput("ae_wait_times_plot")
              ),
@@ -127,7 +123,7 @@ ui <- navbarPage(
                title = tags$h3("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
                status = "warning",
                solidHeader = TRUE,
-               height = 500,
+               height = 600,
                
                plotOutput("ae_map")
              )
@@ -167,7 +163,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
-                 height = 500,
+                 height = 600,
                  
                  plotOutput("winter_plot")
                )
@@ -200,7 +196,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
-                 height = 500,
+                 height = 600,
                  
                  plotOutput("covid_plot")
                )
@@ -243,7 +239,7 @@ ui <- navbarPage(
                  title = tags$h3("Average Hospital Episodes by Age Groups"),
                  status = "success",
                  solidHeader = TRUE,
-                 height = 500,
+                 height = 600,
                  
                  plotlyOutput("age_plot")
                )
@@ -286,7 +282,7 @@ ui <- navbarPage(
                  title = tags$h3("Average Hospital Episodes by Sex"),
                  status = "success",
                  solidHeader = TRUE,
-                 height = 500,
+                 height = 600,
                  
                  plotlyOutput("sex_plot")
                )
@@ -330,7 +326,7 @@ ui <- navbarPage(
                  title = tags$h3("Average Hospital Episodes by SIMD Deprivation score"),
                  status = "success",
                  solidHeader = TRUE,
-                 height = 500,
+                 height = 600,
                  
                  plotlyOutput("simd_plot")
                )
@@ -378,7 +374,7 @@ server <- function(input, output) {
                  y = mean_discharge)) +
       geom_line() +
       theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))+
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
       geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
@@ -408,7 +404,7 @@ server <- function(input, output) {
       geom_line(aes(colour = department_type))+
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
       theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9))+
       geom_smooth()+
       geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
@@ -455,7 +451,7 @@ server <- function(input, output) {
            y = "Average Episodes\n",
            colour = "Age")+
       theme_minimal()+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
     ggplotly(age_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE)
@@ -483,7 +479,7 @@ server <- function(input, output) {
            y = "Average Episodes\n",
            colour = "Sex")+
       theme_minimal()+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
     
     ggplotly(sex_plotly, tooltip = "text") %>% 
@@ -515,7 +511,7 @@ server <- function(input, output) {
            y = "Average Episodes\n",
            colour = "SIMD")+
       theme_minimal()+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
     ggplotly(simd_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE) 
