@@ -174,3 +174,5 @@ covid_ae_attendance <- covid_ae_attendance %>%
       destination == "prop_unknown" ~ "Unknown or other discharge destination"
     )
   )
+
+write_csv(covid_ae_attendance, "clean_data/covid_ae_attendance.csv")
