@@ -9,6 +9,7 @@ library(shinyWidgets)
 library(lubridate)
 library(plotly)
 
+
 # data wrangling ----------------------------------------------------------
 
 waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
@@ -90,6 +91,9 @@ max_year_simd <- max(simd$year)
 
 all_healthboards = c("All Scotland", "Glasgow")
 
+
+pal <- colorNumeric("viridis", NULL) # set colour palette
+
 # ui ----------------------------------------------------------------------
 
 ui <- navbarPage(
@@ -108,47 +112,22 @@ ui <- navbarPage(
   
   tabPanel(tags$h5("A&E Overview"),
            
-           
-           
            fluidRow(
              
              box(
-               title = NULL,
-               status = "primary",
-               solidHeader = FALSE,
-               valueBoxOutput(outputId = "percent_ae",
-                              width = 12),
-               selectInput(inputId = "date_choice",
-                           label = tags$h4("Date"),
-                           choices = c("2020", "2021")
-                           )
-             ),
-             
-             box(
-               title = tags$h3("Year of A&E Wait Times"),
-               status = "warning",
-               solidHeader = TRUE,
-               
-               selectInput(inputId = "year_choice",
-                           label = NULL,
-                           choices = all_years)
-             )
-           ),
-           
-           fluidRow(
-             
-             box(
-               title = tags$h4("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
+               title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
                status = "primary",
                solidHeader = TRUE,
+               height = 500,
                
                plotlyOutput("ae_wait_times_plot")
              ),
              
              box(
-               title = tags$h4("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
+               title = tags$h3("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
                status = "warning",
                solidHeader = TRUE,
+               height = 500,
                
                plotOutput("ae_map")
              )
@@ -184,11 +163,11 @@ ui <- navbarPage(
              
              mainPanel = mainPanel(
                box(
-                 title = tags$h4("Proportion of Patients Being Dispatched to Different Destinations"),
+                 title = tags$h3("Proportion of Patients Being Dispatched to Different Destinations"),
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
-                 height = 650,
+                 height = 500,
                  
                  plotOutput("winter_plot")
                )
@@ -221,6 +200,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
+                 height = 500,
                  
                  plotOutput("covid_plot")
                )
@@ -260,9 +240,10 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h4("Average Hospital Episodes by Age Groups"),
+                 title = tags$h3("Average Hospital Episodes by Age Groups"),
                  status = "success",
                  solidHeader = TRUE,
+                 height = 500,
                  
                  plotlyOutput("age_plot")
                )
@@ -302,9 +283,10 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h4("Average Hospital Episodes by Sex"),
+                 title = tags$h3("Average Hospital Episodes by Sex"),
                  status = "success",
                  solidHeader = TRUE,
+                 height = 500,
                  
                  plotlyOutput("sex_plot")
                )
@@ -345,9 +327,10 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h4("Average Hospital Episodes by SIMD Deprivation score"),
+                 title = tags$h3("Average Hospital Episodes by SIMD Deprivation score"),
                  status = "success",
                  solidHeader = TRUE,
+                 height = 500,
                  
                  plotlyOutput("simd_plot")
                )
@@ -394,6 +377,8 @@ server <- function(input, output) {
       ggplot(aes(x = date,
                  y = mean_discharge)) +
       geom_line() +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
       geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
@@ -409,8 +394,10 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)
-  }, height = 500)
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+      labs(x = "\nDate",
+           y = "Proportion")
+  }, height = 450)
   
   output$ae_wait_times_plot <- renderPlotly({
     ae_wait_plotly <- ae_wait_times %>% 
@@ -436,6 +423,8 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       labs(x = "\nDate",
            y = "Percentage",
            colour = "Department Type")
@@ -463,7 +452,8 @@ server <- function(input, output) {
                                    "Average Episodes: ", round(avg_episodes, digits = 2), "<br>",
                                    "Age Group: ", age)),size = 0.5)+
       labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n")+
+           y = "Average Episodes\n",
+           colour = "Age")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     
@@ -490,7 +480,8 @@ server <- function(input, output) {
                                    "Gender: ", sex)),
                  size = 0.5)+
       labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n")+
+           y = "Average Episodes\n",
+           colour = "Sex")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     
@@ -521,7 +512,8 @@ server <- function(input, output) {
                      colour = simd),size = 0.5)+
       scale_y_continuous(labels = scales::comma)+
       labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n")+
+           y = "Average Episodes\n",
+           colour = "SIMD")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     
