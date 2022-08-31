@@ -8,38 +8,19 @@ library(shinydashboard)
 library(shinyWidgets)
 library(lubridate)
 library(plotly)
+library(leaflet)
+library(sf)
+library(scales)
+library(here)
+here()
 
 
 # data wrangling ----------------------------------------------------------
 
-waiting_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
-
-
-waiting_times <- waiting_times %>% 
-  mutate(date = ym(month),
-         quarter = quarter(date),
-         year = year(date))
+waiting_times <- read_csv("clean_data/wait_times.csv")
 
 waiting_times <- waiting_times %>% 
-  mutate(
-    prop_admission_to_same = (discharge_destination_admission_to_same/number_of_attendances_aggregate)
-  ) %>% 
-  mutate(prop_other_speciality = (discharge_destination_other_specialty/number_of_attendances_aggregate)) %>% 
-  mutate(prop_residence = (discharge_destination_residence/number_of_attendances_aggregate)) %>% 
-  mutate(prop_transfer = (discharge_destination_transfer/number_of_attendances_aggregate)) %>% 
-  mutate(prop_unknown = (discharge_destination_unknown/number_of_attendances_aggregate))
-
-waiting_times <- waiting_times %>% 
-  pivot_longer(cols = prop_admission_to_same:prop_unknown, names_to = "discharge_destination", values_to = "discharge_proportion")
-
-waiting_times <- waiting_times %>% 
-  mutate(discharge_destination = case_when(
-    str_detect(discharge_destination, "prop_admission_to_same") ~ "Admission to Same Facility",
-    str_detect(discharge_destination, "prop_other_speciality") ~ "Transfer to Other Facility",
-    str_detect(discharge_destination, "prop_residence") ~ "Transfer to Residence",
-    str_detect(discharge_destination, "prop_transfer") ~ "Transfer to Private Facility",
-    str_detect(discharge_destination, "prop_unknown") ~ "Unknown"
-  ))
+  mutate(year = year(date))
 
 min_year_wait <- min(waiting_times$year)
 max_year_wait <- max(waiting_times$year)
@@ -87,7 +68,72 @@ all_simd <- simd %>%
 min_year_simd <- min(simd$year)
 max_year_simd <- max(simd$year)
 
-all_healthboards = c("All Scotland", "Glasgow")
+covid_ae_attendances <- read_csv("clean_data/covid_ae_attendance.csv")
+
+all_healthboards <- covid_ae_attendances %>% 
+  distinct(hb_name) %>% 
+  arrange(hb_name) %>% 
+  pull()
+
+hb_simd <- read_csv("clean_data/hb_simd_clean.csv")
+
+all_healthboards_simd <- hb_simd %>% 
+  distinct(hb_name) %>% 
+  arrange(hb_name) %>% 
+  pull()
+
+all_simd_map <- hb_simd %>% 
+  distinct(simd_quintile) %>% 
+  arrange(simd_quintile) %>% 
+  pull()
+
+all_simd_year <- hb_simd %>%
+  distinct(year) %>% 
+  arrange(year) %>% 
+  pull()
+
+scotland <- st_read("clean_data/shapefile/scotland_smaller.gpkg")
+
+#transform so leaflet is happy with it
+scotland <- st_transform(scotland, '+proj=longlat +datum=WGS84')
+
+#rename columns to allow easier shiny running
+scotland <- scotland %>%
+  dplyr::rename(`2007` = target_2007,
+                `2008` = target_2008,
+                `2009` = target_2009,
+                `2010` = target_2010,
+                `2011` = target_2011,
+                `2012` = target_2012,
+                `2013` = target_2013,
+                `2014` = target_2014,
+                `2015` = target_2015,
+                `2016` = target_2016,
+                `2017` = target_2017,
+                `2018` = target_2018,
+                `2019` = target_2019,
+                `2020` = target_2020,
+                `2021` = target_2021
+  )
+#pivot longer to allow filtering for user input
+scotland <- scotland %>% 
+  pivot_longer(cols = "2007":"2021", names_to = "target_years", values_to = "percentage")
+
+scotland_years <- scotland %>% 
+  distinct(target_years) %>% 
+  arrange(target_years) %>% 
+  pull()
+
+min_scotland_year <- min(scotland$target_years)
+max_scotland_year <- max(scotland$target_years)
+
+hb_agesex <- read_csv("clean_data/covid_agesex.csv")
+
+all_hb_ages <- hb_agesex %>%
+  filter(age_group != "All ages") %>% 
+  distinct(age_group) %>% 
+  arrange(age_group) %>% 
+  pull()
 
 
 # ui ----------------------------------------------------------------------
@@ -114,7 +160,7 @@ ui <- navbarPage(
                title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
                status = "primary",
                solidHeader = TRUE,
-               height = 600,
+               height = 750,
                
                plotlyOutput("ae_wait_times_plot")
              ),
@@ -123,9 +169,17 @@ ui <- navbarPage(
                title = tags$h3("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
                status = "warning",
                solidHeader = TRUE,
-               height = 600,
+               height = 750,
                
-               plotOutput("ae_map")
+               sliderInput(inputId = "leaflet_year_slider",
+                           label = "Please Select Year",
+                           min = 2007,
+                           max = 2021,
+                           sep = "",
+                           value = 2007
+                           ),
+               
+               leafletOutput("scotlandmap", height = "53vh", width = "45vw")
              )
            )
            
@@ -165,7 +219,7 @@ ui <- navbarPage(
                  width = 12,
                  height = 600,
                  
-                 plotOutput("winter_plot")
+                 plotlyOutput("winter_plot")
                )
              )
            )
@@ -174,32 +228,32 @@ ui <- navbarPage(
   
   tabPanel(tags$h5("Impact of COVID-19"),
            
-           sidebarLayout(
+           selectInput(
+             inputId = "health_boards",
+             label = tags$h3("Select Health Board"),
+             choices = all_healthboards
+           ),
+           
+           fluidRow(
              
-             sidebarPanel = sidebarPanel(
+             box(
+               title = tags$h3("Number of attendances at A&E 2020 - 2022"),
+               status = "primary",
+               solidHeader = TRUE,
+               width = 12,
+               height = 600,
                
-               width = 4,
-               
-               titlePanel(tags$h1("A&E Admissions Plot Controls")),
-               
-               radioButtons(
-                 inputId = "health_boards",
-                 label = tags$h3("Select Health Board"),
-                 choices = all_healthboards
-               )
+               plotlyOutput("covid_plot_1")
              ),
              
-             mainPanel = mainPanel(
+             box(
+               title = tags$h3("Destination of attendances at A&E 2020 - 2022"),
+               status = "primary",
+               solidHeader = TRUE,
+               width = 12,
+               height = 600,
                
-               box(
-                 title = "",
-                 status = "primary",
-                 solidHeader = TRUE,
-                 width = 12,
-                 height = 600,
-                 
-                 plotOutput("covid_plot")
-               )
+               plotlyOutput("covid_plot_2")
              )
            )
   ),
@@ -229,6 +283,15 @@ ui <- navbarPage(
                            value = c(min_year_age, max_year_age),
                            step = 1,
                            sep = ""
+               ),
+               
+               titlePanel(tags$h1("Accute Patient Bed Availability Controls")),
+               
+               checkboxGroupInput(
+                 inputId = "hb_age_groups",
+                 label = tags$h3("Select Patient Age Group(s)"),
+                 choices = all_hb_ages,
+                 selected = all_hb_ages
                )
              ),
              
@@ -242,6 +305,16 @@ ui <- navbarPage(
                  height = 600,
                  
                  plotlyOutput("age_plot")
+               ),
+               
+               box(
+                 width = 12,
+                 title = tags$h3("Mean Bed Availability for all Acute Patients"),
+                 status = "success",
+                 solidHeader = TRUE,
+                 height = 600,
+                 
+                 plotlyOutput("hb_age_plot")
                )
              )
            )
@@ -315,7 +388,19 @@ ui <- navbarPage(
                            value = c(min_year_simd, max_year_simd),
                            step = 1,
                            sep = ""
-               )
+               ),
+               
+               br(),
+               
+               br(),
+               
+               br(),
+               
+               titlePanel(tags$h1("SIMD A&E Attendance Plot Controls")),
+               
+               selectInput(inputId = "simd_attendance",
+                           label = tags$h2("Select Healthboard"),
+                           choices = all_healthboards_simd)
                
              ),
              
@@ -329,6 +414,16 @@ ui <- navbarPage(
                  height = 600,
                  
                  plotlyOutput("simd_plot")
+               ),
+               
+               box(
+                 width = 12,
+                 title = tags$h3("Mean Emergency Admissions per SIMD (2020-2022)"),
+                 status = "success",
+                 solidHeader = TRUE,
+                 height = 600,
+                 
+                 plotlyOutput("simd_attendance_plot")
                )
              )
            )
@@ -337,7 +432,30 @@ ui <- navbarPage(
   
   tabPanel(tags$h5("Geospatial Maps"),
            
-           
+           fluidRow(
+             box(
+               title = tags$h1("Admissions per Healthboard Area for SIMD Levels"),
+               status = "warning",
+               solidHeader = TRUE
+             ),
+             
+             box(
+               title = tags$h1("Select SIMD Level and Year"),
+               status = "warning",
+               solidHeader = TRUE,
+               
+               selectInput(inputId = "simd_map",
+                           label = "",
+                           choices = all_simd_map),
+               
+               selectInput(inputId = "simd_map_year",
+                           label = "",
+                           choices = all_simd_year)
+             )
+
+           ),
+
+           leafletOutput("simd_leaflet", height = "100vh", width = "100vw")
   ),
   
   
@@ -352,13 +470,6 @@ ui <- navbarPage(
 
 server <- function(input, output) {
   
-  output$percent_ae <- renderValueBox({
-    valueBox(
-      paste0(96, "%"), "Waiting Time % Less Than 4 Hours", color = "light-blue", icon = icon("hospital"), width = 12
-    )
-  })
-  
-  
   filtered_winter_plot <- reactive({
     waiting_times %>%
       filter(discharge_destination == input$discharge_destination,
@@ -368,14 +479,20 @@ server <- function(input, output) {
       summarise(mean_discharge = mean(discharge_proportion))
   })
   
-  output$winter_plot <- renderPlot({
-    filtered_winter_plot() %>% 
-      ggplot(aes(x = date,
-                 y = mean_discharge)) +
-      geom_line() +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))+
+  output$winter_plot <- renderPlotly({
+    winter_plotly <- filtered_winter_plot() %>%
+      ggplot() +
+      geom_point(aes(x = date,
+                     y = mean_discharge,
+                     text =  paste0("Date: ", date,
+                                    "<br>",
+                                    "Percentage: ", 
+                                    round(mean_discharge*100, digits = 2), 
+                                    "%")), size = 0.7) +
+      geom_line(aes(x = date,
+                    y = mean_discharge)) +
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
       geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
@@ -390,10 +507,16 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      labs(x = "\nDate",
-           y = "Proportion")
-  }, height = 450)
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7) +
+      labs(title = "Proportion of attendances to selected destination \n",
+           x = "\n Date",
+           y = "Proportion of attendances")
+    
+    winter_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE) %>% 
+      layout(hoverlabel = list(bgcolor = "white"))
+  })
   
   output$ae_wait_times_plot <- renderPlotly({
     ae_wait_plotly <- ae_wait_times %>% 
@@ -428,10 +551,121 @@ server <- function(input, output) {
     ggplotly(ae_wait_plotly)
   })
   
+  #reactive to filter for user input
+  scotland_filtered <- reactive({
+    scotland %>%
+      filter(target_years == input$leaflet_year_slider)
+
+  })
+  # palette
+  pal <- colorNumeric(
+    palette = "viridis",
+    domain = scotland$percentage
+  )
+
+
+  output$scotlandmap <- renderLeaflet({
+    m <- leaflet()
+    m %>% addTiles() %>%
+      addPolygons(data=scotland_filtered(),
+                  smoothFactor = 0.3,
+                  fillOpacity = 1,
+                  fillColor = ~pal(percentage),#fill by percentage of 4hr target
+                  label = ~paste0(HBName,"<br>",
+                                  percentage, "%", "<br>",
+                                  target_years) %>% lapply(htmltools::HTML),
+                  weight = 1,
+                  highlightOptions = highlightOptions(color = "white",
+                                                      weight = 2,
+                                                      bringToFront = TRUE)) %>%
+      setView(-4, 57, zoom = 5.5) %>%
+      addLegend(pal = pal,
+                values = scotland$percentage,
+                opacity = 0.5,
+                title = "% A&E meeting<br> 4hr target")
+
+  })
+  
+  filtered_covid_plot <- reactive({
+    covid_ae_attendances %>% 
+      filter(hb_name == input$health_boards)
+  })
+  
+  output$covid_plot_1 <- renderPlotly({
+    covid_ae_attendance_plotly <- filtered_covid_plot() %>% 
+      ggplot() +
+      geom_point(aes(x = date,
+                     y = num_attendances,
+                     text = paste0("Date: ", year, "-", month,
+                                   "<br>",
+                                   "Number of admissions: ", num_attendances,
+                                   "<br>",
+                                   "2017-2019 avg admissions: ", 
+                                   round(avg_attendances_20171819))
+      )) +
+      geom_line(aes(x = date,
+                    y = num_attendances)) +
+      geom_line(aes(x = date,
+                    y = avg_attendances_20171819), 
+                colour = "grey60", alpha = 0.5) +
+      scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9))+
+      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+      labs(title = "Comparison with 2018-2019 averages\n",
+           x = "\nDate",
+           y = "Number of Attendances")
+    
+    covid_ae_attendance_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE) %>% 
+      layout(hoverlabel = list(bgcolor = "white"))
+  })
+  
+  output$covid_plot_2 <- renderPlotly({
+    covid_ae_destinations_plotly <- filtered_covid_plot() %>% 
+      ggplot() +
+      geom_point(aes(x = date,
+                     y = destination_prop,
+                     colour = destination,
+                     text = paste0("Date: ", year, "-", month,
+                                   "<br>",
+                                   "Percentage: ", 
+                                   round(destination_prop*100, digits = 2), 
+                                   "%",
+                                   "<br>",
+                                   "2017-2019 percentage: ", 
+                                   round(avg_prop_20171819*100, digits = 2), 
+                                   "%"))) +
+      geom_line(aes(x = date,
+                    y = destination_prop,
+                    group = destination)) +
+      geom_line(aes(x = date,
+                    y = avg_prop_20171819,
+                    colour = destination,
+                    group = destination), alpha = 0.5) +
+      scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+      scale_y_sqrt() +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9))+
+      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+      labs(title = "Comparison with proportion of attendances at A&E 2017 - 2019\n",
+           x = "\nDate",
+           y = "Proportion of attendances",
+           colour = "Destination")
+    covid_ae_destinations_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE)
+  })
+  
   filtered_age_plot <- reactive({
     age %>% 
       filter(year >= input$age_year[1] & year <= input$age_year[2],
-             age == input$age_groups) %>% 
+             age %in% input$age_groups) %>% 
       group_by(quarter, age) %>% 
       summarise(avg_episodes = mean(episodes, na.rm = TRUE))
   })
@@ -457,10 +691,55 @@ server <- function(input, output) {
       config(displayModeBar = FALSE)
   })
   
+  # view(hb_agesex)
+  
+  filtered_hb_age_plot <- reactive({
+    hb_agesex %>% 
+      filter(age_group %in% input$hb_age_groups) %>% 
+      filter(admission_type == "Emergency",
+             hb_name == "All Scotland") %>% 
+      group_by(hb_name, age_group, is_winter) %>% 
+      summarise(mean_admissions = mean(number_admissions),
+                mean_20182019_admissions = mean(average20182019))
+    
+  })
+  
+  output$hb_age_plot <- renderPlotly({
+    covid_age_plotly <- filtered_hb_age_plot() %>% 
+      ggplot() +
+      geom_col(aes(x = ordered(age_group, levels = c("Under 5",
+                                                     "5 - 14",
+                                                     "15 - 44",
+                                                     "45 - 64",
+                                                     "65 - 74",
+                                                     "75 - 84",
+                                                     "85 and over")),
+                   y = mean_admissions, 
+                   fill = if_else(is_winter == TRUE,
+                                  "Winter", "Not winter"),
+                   text = paste0("Age group: ", age_group,
+                                 "<br>",
+                                 "Average number of admissions: ", 
+                                 round(mean_admissions),
+                                 "<br>",
+                                 "2018/2019 avg admissions: ", 
+                                 round(mean_20182019_admissions))), 
+               position = "dodge") +
+      labs(title = "Comparison between winter and non-winter months",
+           x = "\n Age group",
+           y = "Mean number of admissions",
+           fill = "Season")
+    
+    covid_age_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE) 
+    
+  })
+  
   filtered_sex_plot <- reactive({
     sex %>% 
-    filter(year >= input$sex_year[1] & year <= input$sex_year[2],
-           sex == input$sex_groups) %>% 
+      filter(year >= input$sex_year[1] & year <= input$sex_year[2],
+             sex == input$sex_groups) %>% 
       group_by(quarter, sex) %>% 
       summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE))
   })
@@ -515,6 +794,140 @@ server <- function(input, output) {
     
     ggplotly(simd_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE) 
+  })
+  
+  filtered_simd_attendance_plot <- reactive({
+    hb_simd %>% 
+      filter(hb_name == input$simd_attendance,
+             admission_type == "Emergency")
+  })
+  
+  output$simd_attendance_plot <- renderPlotly({
+    simd_attendance_plotly <- filtered_simd_attendance_plot() %>%
+      mutate(simd_quintile = factor(simd_quintile, levels = c("1", "2", "3", "4", "5"))) %>% 
+      group_by(hb_name, week_ending, simd_quintile, year) %>% 
+      summarise(mean_admissions = mean(number_admissions),
+                mean_20182019_admissions = mean(average20182019)) %>%
+      ggplot()+
+      geom_point(aes(x = week_ending, 
+                     y = mean_admissions, colour = simd_quintile, 
+                     text = paste0("Date: ", week_ending, 
+                                   "<br>",
+                                   "Mean admissions: ", 
+                                   round(mean_admissions, digits = 2), 
+                                   "<br>",
+                                   "2018-2019 mean admissions: ", 
+                                   round(mean_20182019_admissions, digits = 2))), size = 0.7) +
+      
+      geom_line(aes(x = week_ending,
+                    y = mean_admissions,
+                    colour = simd_quintile,
+                    group = simd_quintile)) +
+      scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+      scale_y_sqrt() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+      labs(title = "Mean admissions per SIMD \n",
+           x = "Date",
+           y = "Mean admissions",
+           colour = "SIMD")
+
+    simd_attendance_plotly %>% 
+      ggplotly(tooltip = "text") %>% 
+      config(displayModeBar = FALSE)
+  })
+  
+  filtered_simd_map <- reactive({
+    hb_simd %>%
+      filter(simd_quintile == input$simd_map,
+             year == input$simd_map_year) %>%
+      filter(admission_type == "Emergency") %>%
+        mutate(week_ending = ymd(week_ending)) %>%
+        mutate(month = month(week_ending, label = TRUE),
+               year = year(week_ending), .after = week_ending) %>%
+      group_by(hb_name, year, simd_quintile) %>%
+      summarise(mean_admissions = mean(number_admissions)*100)
+  })
+
+
+  output$simd_leaflet <- renderLeaflet({
+    filtered_simd_map() %>%
+
+      leaflet() %>%
+      addTiles() %>%
+      setView(-4, 55.5, zoom = 7) %>%
+      addCircleMarkers(lng = -4.975,
+                       lat = 55.445,
+                       color = "red",
+                       popup="Ayrshire and Arran",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -2.83333000,
+                       lat = 55.58333000,
+                       color = "red",
+                       popup="Borders",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.857784,
+                       lat = 54.988285,
+                       color = "red",
+                       popup="Dumfries and Galloway",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.78535,
+                       lat = 56.0021,
+                       color = "red",
+                       popup="Forth Valley",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -2.988,
+                       lat = 57.228,
+                       color = "red",
+                       popup="Grampian",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -4.71,
+                       lat = 57.12,
+                       color = "red",
+                       popup="Highland",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.083999664,
+                       lat = 55.905496378,
+                       color = "red",
+                       popup="Lothian",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.0,
+                       lat = 59.0,
+                       color = "red",
+                       popup="Orkney",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -1.2689,
+                       lat = 60.3038,
+                       color = "red",
+                       popup="Shetland",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -7.02,
+                       lat =  57.76,
+                       color = "red",
+                       popup="Western Isles",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.1999992,
+                       lat =    56.249999,
+                       color = "red",
+                       popup="Fife",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.7333304,
+                       lat = 56.6999972,
+                       color = "red",
+                       popup="Tayside",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -4.4057,
+                       lat = 55.90137,
+                       color = "red",
+                       popup="Greater Glasgow and Clyde",
+                       radius = hb_simd$mean_admissions, weight = 1) %>%
+      addCircleMarkers(lng = -3.83333,
+                       lat = 55.583331,
+                       color = "red",
+                       popup="Lanarkshire",
+                       radius = hb_simd$mean_admissions, weight = 1)
   })
   
 }
