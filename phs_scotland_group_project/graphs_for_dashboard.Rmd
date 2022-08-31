@@ -2,6 +2,8 @@
 title: "R Notebook"
 output: html_notebook
 ---
+
+# Libraries
 ```{r}
 library(tidyverse)
 library(scales)
@@ -13,7 +15,7 @@ library(zoo)
 
 
 
-## Covid Tab
+# Covid Tab
 ```{r}
 #load in beds and add year column
 beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
@@ -25,9 +27,10 @@ mutate(quarter_date = yq(quarter),
 
 beds %>% 
 write_csv("clean_data/non_covid_data/beds.csv")
+
 ```
 
-# Plot for bed availability for all acute
+## Plot for bed availability for all acute
 ```{r}
 # bed percentage availablity for "all acute"
 # Will need to add filter for year based on user input
@@ -52,8 +55,88 @@ ggplotly(beds_plotly, tooltip = "text") %>%
 
 ```
 
-## Scotland Shapefile
-#### ae_wait_times wrangling
+## Covid AE attendance graphs
+
+```{r}
+#data for graphs
+covid_ae_attendance <- read_csv("clean_data/covid_ae_attendance.csv")
+```
+
+
+```{r}
+#shows number of attendances at A&E during covid
+covid_ae_attendance_plotly <- covid_ae_attendance %>% 
+  filter(hb_name == "All Scotland") %>% 
+  ggplot() +
+  geom_point(aes(x = date,
+                 y = num_attendances,
+                 text = paste0("Date: ", year, "-", month,
+                              "<br>",
+                   "Number of admissions: ", num_attendances,
+                 "<br>",
+                 "2017-2019 avg admissions: ", 
+                 round(avg_attendances_20171819)))) +
+  geom_line(aes(x = date,
+                y = num_attendances)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+  labs(title = "Number of attendances at A&E 2020 - 2022 \n",
+       x = "Date",
+       y = "Number of Attendances")
+covid_ae_attendance_plotly %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+```
+
+
+```{r}
+#shows destination breakdown for A&E attendances during covid
+
+covid_ae_destinations_plotly <- covid_ae_attendance %>% 
+  filter(hb_name == "All Scotland") %>% 
+  ggplot() +
+  geom_point(aes(x = date,
+                 y = destination_prop,
+                 colour = destination,
+                 text = paste0("Date: ", year, "-", month,
+                               "<br>",
+                               "Percentage: ", 
+                              round(destination_prop*100, digits = 2), 
+                              "%",
+                              "<br>",
+                              "2017-2019 percentage: ", 
+                              round(avg_prop_20171819*100, digits = 2), 
+                              "%"))) +
+  geom_line(aes(x = date,
+                 y = destination_prop,
+                group = destination)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  scale_y_sqrt() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+  labs(title = "Destination of attendances at A&E 2020 - 2022 \n",
+       x = "Date",
+       y = "Proportion of attendances",
+       colour = "Destination")
+covid_ae_destinations_plotly %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE)
+
+```
+
+
+
+
+
+
+# Scotland Shapefile
+## ae_wait_times wrangling
 ```{r}
 ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
 
@@ -70,7 +153,7 @@ ae_wait_times %>%
 write_csv("clean_data/non_covid_data/ae_wait_times.csv")
 ```
 
-# add in target data for the shape files
+## add in target data for the shape files
 ```{r}
 #write in the target data for the shapefile colours
 target_2007 <- ae_wait_times %>%
@@ -211,7 +294,7 @@ target_2021 <- ae_wait_times %>%
   
 ```
 
-#### shape file wrangling
+## shape file wrangling
 ```{r}
 scotland <- st_read("../SG_NHS_HealthBoards_2019_shapefile/SG_NHS_HealthBoards_2019.shp")
 
@@ -268,7 +351,8 @@ p %>%
   config(displayModeBar = FALSE)
 ```
 
-## SIMD graph 
+# SIMD tab
+## SIMD episodes line graph 
 
 ```{r}
 simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% janitor::clean_names()
@@ -297,7 +381,7 @@ simd_plotly <- simd %>%
                                "SIMD: ", simd),
                    colour = simd),size = 0.5)+
   scale_y_continuous(labels = scales::comma)+
-  labs(title = "Average Hospital Episodes by SIMD Deprevation score\n",
+  labs(title = "Average Hospital Episodes by SIMD Deprivation score\n",
        x = "\nYear and Quarter",
        y = "Average Episodes\n")+
   theme_minimal()+
@@ -309,7 +393,8 @@ ggplotly(simd_plotly, tooltip = "text") %>%
 
 ```
 
-## Age Graph
+# Age tab
+## Age episode line Graph
 
 ```{r}
 age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
@@ -347,7 +432,8 @@ ggplotly(age_plotly, tooltip = "text") %>%
   config(displayModeBar = FALSE)
 ```
 
-## Gender
+# Sex tab
+## Sex line graph
 
 ```{r}
 sex_plotly <- age_sex %>% 
@@ -369,10 +455,8 @@ sex_plotly <- age_sex %>%
 ggplotly(sex_plotly, tooltip = "text") %>% 
   config(displayModeBar = FALSE)
 ```
-## A&E Tab
-```{r}
-#THE A&E WAI TTIMES IS HANDLED ABOVE IN THE SHAPEFILE WRANGLING SECTION
-```
+# Scotland leaflet map
+
 
 ```{r}
 
@@ -408,3 +492,58 @@ m %>% addTiles() %>%
                                                             bringToFront = TRUE)) %>% 
   addLegend(pal = pal, values = scotland$target_2007, opacity = 1)
 ```
+
+# Winter tab
+
+## A&E destination breakdown
+
+```{r}
+#read in clean dataset
+waiting_times <- read_csv("clean_data/wait_times.csv")
+```
+
+```{r}
+#graph of A&E destination breakdown
+winter_plotly <- waiting_times %>% 
+  filter(discharge_destination == "Admission to Same Facility",
+         !is.na(discharge_proportion)) %>% 
+  group_by(date) %>% 
+  summarise(mean_admission_to_same = mean(discharge_proportion)) %>% 
+  ggplot() +
+  geom_point(aes(x = date,
+         y = mean_admission_to_same,
+         text =  paste0("Date: ", date,
+                               "<br>",
+                               "Percentage: ", 
+                              round(mean_admission_to_same*100, digits = 2), 
+                              "%"))) +
+  geom_line(aes(x = date,
+         y = mean_admission_to_same)) +
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7) +
+  labs(title = "Proportion of attendances to selected destination \n",
+       x = "\n Date",
+       y = "Proportion of attendances")
+
+winter_plotly %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+layout(hoverlabel = list(bgcolor = "white"))
+
+```
+
