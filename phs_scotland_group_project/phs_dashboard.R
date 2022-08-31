@@ -75,9 +75,21 @@ all_sex <- sex %>%
 min_year_sex <- min(sex$year)
 max_year_sex <- max(sex$year)
 
+simd <- read_csv("clean_data/non_covid_data/simd.csv")
+
+view(simd)
+
+all_simd <- simd %>%
+  drop_na(simd) %>% 
+  distinct(simd) %>% 
+  arrange(simd) %>% 
+  pull()
+
+min_year_simd <- min(simd$year)
+max_year_simd <- max(simd$year)
+
 all_healthboards = c("All Scotland", "Glasgow")
 
-all_simd = c("1", "2", "3", "4", "5")
 # ui ----------------------------------------------------------------------
 
 ui <- navbarPage(
@@ -126,7 +138,7 @@ ui <- navbarPage(
            fluidRow(
              
              box(
-               title = "A&E LINE GRAPH",
+               title = tags$h4("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
                status = "primary",
                solidHeader = TRUE,
                
@@ -134,7 +146,7 @@ ui <- navbarPage(
              ),
              
              box(
-               title = "SCOTLAND MAP",
+               title = tags$h4("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
                status = "warning",
                solidHeader = TRUE,
                
@@ -172,11 +184,11 @@ ui <- navbarPage(
              
              mainPanel = mainPanel(
                box(
-                 title = "WINTER PLOT",
+                 title = tags$h4("Proportion of Patients Being Dispatched to Different Destinations"),
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
-                 height = 600,
+                 height = 650,
                  
                  plotOutput("winter_plot")
                )
@@ -205,7 +217,7 @@ ui <- navbarPage(
              mainPanel = mainPanel(
                
                box(
-                 title = "COVID PLOT",
+                 title = "",
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
@@ -248,7 +260,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = "AGE PLOT",
+                 title = tags$h4("Average Hospital Episodes by Age Groups"),
                  status = "success",
                  solidHeader = TRUE,
                  
@@ -290,7 +302,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = "SEX PLOT",
+                 title = tags$h4("Average Hospital Episodes by Sex"),
                  status = "success",
                  solidHeader = TRUE,
                  
@@ -314,14 +326,15 @@ ui <- navbarPage(
                checkboxGroupInput(
                  inputId = "simd_groups",
                  label = tags$h3("Select Patient SIMD"),
-                 choices = all_simd
+                 choices = all_simd,
+                 selected = all_simd
                ),
                
                sliderInput(inputId = "simd_year",
                            label = tags$h2("Year range"),
-                           min = 2016,
-                           max = 2022,
-                           value = c(2016, 2022),
+                           min = min_year_simd,
+                           max = max_year_simd,
+                           value = c(min_year_simd, max_year_simd),
                            step = 1,
                            sep = ""
                )
@@ -332,11 +345,11 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = "SIMD PLOT",
+                 title = tags$h4("Average Hospital Episodes by SIMD Deprivation score"),
                  status = "success",
                  solidHeader = TRUE,
                  
-                 plotOutput("simd_plot")
+                 plotlyOutput("simd_plot")
                )
              )
            )
@@ -423,8 +436,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      labs(title = "Percentage of A&E departments meeting the 4 hr\n target turnaround for patients\n\n",
-           x = "\nDate",
+      labs(x = "\nDate",
            y = "Percentage",
            colour = "Department Type")
     
@@ -450,8 +462,7 @@ server <- function(input, output) {
                      text = paste0("Date: ", quarter, "<br>",
                                    "Average Episodes: ", round(avg_episodes, digits = 2), "<br>",
                                    "Age Group: ", age)),size = 0.5)+
-      labs(title = "Average Hospital Episodes by Age Groups\n",
-           x = "\nYear and Quarter",
+      labs(x = "\nYear and Quarter",
            y = "Average Episodes\n")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -478,8 +489,7 @@ server <- function(input, output) {
                      text = paste0("Date: ", quarter, "<br>", 
                                    "Gender: ", sex)),
                  size = 0.5)+
-      labs(title = "Average Hospital Episodes by Gender\n",
-           x = "\nYear and Quarter",
+      labs(x = "\nYear and Quarter",
            y = "Average Episodes\n")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -487,6 +497,36 @@ server <- function(input, output) {
     
     ggplotly(sex_plotly, tooltip = "text") %>% 
       config(displayModeBar = FALSE)
+  })
+  
+  filtered_simd_plot <- reactive({
+    simd %>%
+      drop_na(simd) %>% 
+      mutate(simd = as.factor(simd)) %>% 
+      filter(year >= input$simd_year[1] & year <= input$simd_year[2],
+             simd %in% input$simd_groups)
+  })
+  
+  output$simd_plot <- renderPlotly({
+    simd_plotly <- filtered_simd_plot() %>% 
+      # drop_na(simd) %>%
+      # mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+      group_by(quarter, simd) %>%
+      summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>%
+      ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+      geom_line(aes(colour = simd))+
+      geom_point(aes(text = paste0("Date: ", quarter, "<br>",
+                                   "Average Episodes: ", round(avg_episodes, digits = 2), "<br>",
+                                   "SIMD: ", simd),
+                     colour = simd),size = 0.5)+
+      scale_y_continuous(labels = scales::comma)+
+      labs(x = "\nYear and Quarter",
+           y = "Average Episodes\n")+
+      theme_minimal()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    ggplotly(simd_plotly, tooltip = "text") %>% 
+      config(displayModeBar = FALSE) 
   })
   
 }
