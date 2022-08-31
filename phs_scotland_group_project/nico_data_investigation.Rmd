@@ -155,7 +155,7 @@ hb_simd %>%
   geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)+
   facet_wrap(~hb_name, scales = "free_y") + 
   labs(x = "Date",
-       y = "Average admissions per week",
+       y = "Mean admissions per week",
        colour = "Covid vs Pre-Covid")
 
 ```
@@ -173,6 +173,9 @@ hb_simd %>%
   geom_col()
 ```
 
+```{r}
+hb_simd
+```
 
 ```{r}
 hb_simd %>% 
@@ -187,80 +190,49 @@ hb_simd %>%
 ```
 
 ```{r}
-#simd 1
+#simd 1 2020
 hb_simd %>% 
    filter(admission_type == "Emergency", 
-          simd_quintile == "1")%>% 
+          simd_quintile == "1", 
+          year == "2020", 
+          hb_name == "NHS Lothian")%>% 
   group_by(hb_name, week_ending, simd_quintile) %>% 
   summarise(mean_admissions = mean(number_admissions),
             mean_20182019_admissions = mean(average20182019)) %>% 
   
-  ggplot(aes(x = week_ending, y = mean_admissions))+
+  ggplot(aes(x = week_ending, y = mean_admissions, colour = simd_quintile))+
   geom_line()+
    scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
 ```
 
-```{r}
-#simd 1
-hb_simd %>% 
-   filter(admission_type == "Emergency", 
-          simd_quintile == "1")%>% 
-  group_by(hb_name, week_ending, simd_quintile) %>% 
-  summarise(mean_admissions = mean(number_admissions),
-            mean_20182019_admissions = mean(average20182019)) %>% 
-  
-  ggplot(aes(x = week_ending, y = mean_20182019_admissions))+
-  geom_line()+
-   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
-```
+
 
 ```{r}
+hb_simd$simd_quintile <- factor(hb_simd$simd_quintile, levels = c("1", "2", "3", "4", "5"))
+hb_simd
 #simd 5
 hb_simd %>% 
-   filter(admission_type == "Emergency", 
-          simd_quintile == "5")%>% 
+   filter(admission_type == "Emergency"
+          #s
+          )%>% 
   group_by(hb_name, week_ending, simd_quintile) %>% 
   summarise(mean_admissions = mean(number_admissions),
             mean_20182019_admissions = mean(average20182019)) %>% 
   
-  ggplot(aes(x = week_ending, y = mean_20182019_admissions))+
+  ggplot(aes(x = week_ending, y = mean_20182019_admissions, colour = simd_quintile))+
   geom_line()+
    scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
 
 hb_simd %>% 
    filter(admission_type == "Emergency", 
-          simd_quintile == "1")%>% 
+          hb_name == "Scotland") %>% 
   group_by(hb_name, week_ending, simd_quintile) %>% 
-  summarise(mean_admissions = mean(number_admissions),
-            mean_20182019_admissions = mean(average20182019)) %>% 
-  
-  ggplot(aes(x = week_ending, y = mean_admissions))+
-  geom_line()+
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot()+
+  geom_line(aes(x = week_ending, y = mean_admissions, colour = simd_quintile))+
    scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
 ```
 
-```{r}
-#all simd 
-hb_simd %>% 
-   filter(admission_type == "Emergency")%>% 
-  group_by(hb_name, week_ending, simd_quintile) %>% 
-  summarise(mean_admissions = mean(number_admissions),
-            mean_20182019_admissions = mean(average20182019)) %>% 
-  
-  ggplot(aes(x = week_ending, y = mean_20182019_admissions))+
-  geom_line()+
-   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
-
-hb_simd %>% 
-   filter(admission_type == "Emergency")%>% 
-  group_by(hb_name, week_ending, simd_quintile) %>% 
-  summarise(mean_admissions = mean(number_admissions),
-            mean_20182019_admissions = mean(average20182019)) %>% 
-  
-  ggplot(aes(x = week_ending, y = mean_admissions))+
-  geom_line()+
-   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
-```
 
 
 ```{r}
@@ -744,7 +716,7 @@ leaflet() %>%
 ```
 
 ```{r}
-####number of admissions among the the east deprived communities 
+####number of admissions among the the least deprived communities 
 hb_simd %>% 
  filter(admission_type == "Emergency", 
         simd_quintile == "5") %>% 
@@ -822,4 +794,66 @@ leaflet() %>%
                    color = "purple",
                    popup="Lanarkshire",
                    radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+
+```{r}
+simd_quintile  <- as.data.frame(hb_simd$simd_quintile)
+```
+
+```{r}
+
+hb_simd$simd_quintile <- factor(hb_simd$simd_quintile, levels = c("1", "2", "3", "4", "5"))
+hb_simd
+```
+
+
+
+```{r}
+library(plotly)
+```
+
+```{r}
+library(plotly)
+hb_simd$simd_quintile <- factor(hb_simd$simd_quintile, levels = c("1", "2", "3", "4", "5"))
+hb_simd
+#mean admissions per SIMD from 2020 to 2022
+p2 <- hb_simd %>% 
+   filter(admission_type == "Emergency",
+          # hb_name reactive
+          hb_name == "Scotland")%>% 
+  group_by(hb_name, week_ending, simd_quintile, year) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_20182019_admissions = mean(average20182019)) %>% 
+  
+  ggplot()+
+  geom_point(aes(x = week_ending, 
+                  y = mean_admissions, colour = simd_quintile, 
+                 text = paste0("Date: ", week_ending, 
+                               "<br>",
+                               "Mean admissions: ", 
+                              round(mean_admissions, digits = 2), 
+                              "<br>",
+                              "2018-2019 mean admissions: ", 
+                              round(mean_20182019_admissions, digits = 2)))) +
+  
+  geom_line(aes(x = week_ending,
+                 y = mean_admissions,
+                colour = simd_quintile,
+                group = simd_quintile)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  scale_y_sqrt() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+  labs(title = "Mean admissions per SIMD \n",
+       x = "Date",
+       y = "Mean admissions",
+       colour = "SIMD")
+
+
+p2 %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE)
 ```

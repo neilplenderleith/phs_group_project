@@ -65,6 +65,7 @@ covid_ae_attendance <- read_csv("clean_data/covid_ae_attendance.csv")
 
 ```{r}
 #shows number of attendances at A&E during covid
+# Title = Number of attendances at A&E 2020 - 2022
 covid_ae_attendance_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
@@ -75,17 +76,22 @@ covid_ae_attendance_plotly <- covid_ae_attendance %>%
                    "Number of admissions: ", num_attendances,
                  "<br>",
                  "2017-2019 avg admissions: ", 
-                 round(avg_attendances_20171819)))) +
+                 round(avg_attendances_20171819))
+                 )) +
   geom_line(aes(x = date,
                 y = num_attendances)) +
+  geom_line(aes(x = date,
+                y = avg_attendances_20171819), 
+            colour = "grey60", alpha = 0.5) +
   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
    geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-  labs(title = "Number of attendances at A&E 2020 - 2022 \n",
+  labs(title = "Comparison with 2018-2019 averages \n",
        x = "Date",
        y = "Number of Attendances")
+
 covid_ae_attendance_plotly %>% 
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE) %>% 
@@ -95,7 +101,7 @@ covid_ae_attendance_plotly %>%
 
 ```{r}
 #shows destination breakdown for A&E attendances during covid
-
+#Title: Destination of attendances at A&E 2020 - 2022
 covid_ae_destinations_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
@@ -114,19 +120,24 @@ covid_ae_destinations_plotly <- covid_ae_attendance %>%
   geom_line(aes(x = date,
                  y = destination_prop,
                 group = destination)) +
+   geom_line(aes(x = date,
+                 y = avg_prop_20171819,
+                 colour = destination,
+                group = destination), alpha = 0.5) +
   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
   scale_y_sqrt() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
    geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-  labs(title = "Destination of attendances at A&E 2020 - 2022 \n",
+  labs(title = "Comparison with proportion of attendances at A&E 2017 - 2019 \n",
        x = "Date",
        y = "Proportion of attendances",
        colour = "Destination")
 covid_ae_destinations_plotly %>% 
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE)
+
 
 ```
 
