@@ -157,6 +157,7 @@ ui <- navbarPage(
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
+                 height = 600,
                  
                  plotOutput("winter_plot")
                )
@@ -375,7 +376,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)
-  })
+  }, height = 500)
   
 }
 
