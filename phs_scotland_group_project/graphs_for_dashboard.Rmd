@@ -443,6 +443,53 @@ ggplotly(age_plotly, tooltip = "text") %>%
   config(displayModeBar = FALSE)
 ```
 
+## Age column chart
+
+```{r}
+hb_agesex <- read_csv("clean_data/covid_agesex.csv")
+```
+
+
+```{r}
+#title: Average admissions by age group 2020-2022
+covid_age_plotly <- hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group != "All ages", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, age_group, is_winter) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+  geom_col(aes(x = ordered(age_group, levels = c("Under 5",
+                                                 "5 - 14",
+                                                 "15 - 44",
+                                                 "45 - 64",
+                                                 "65 - 74",
+                                                 "75 - 84",
+                                                 "85 and over")),
+               y = mean_admissions, 
+               fill = if_else(is_winter == TRUE,
+                              "Winter", "Not winter"),
+               text = paste0("Age group: ", age_group,
+                             "<br>",
+                             "Average number of admissions: ", 
+                             round(mean_admissions),
+                             "<br>",
+                             "2018/2019 avg admissions: ", 
+                             round(mean_20182019_admissions))), 
+           position = "dodge") +
+  labs(title = "Comparison between winter and non-winter months",
+       x = "\n Age group",
+       y = "Mean number of admissions",
+       fill = "Season")
+
+covid_age_plotly %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE) 
+```
+
+
+
 # Sex tab
 ## Sex line graph
 
