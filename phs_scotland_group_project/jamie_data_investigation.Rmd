@@ -9,6 +9,7 @@ library(tidyverse)
 library(janitor)
 library(lubridate)
 library(infer)
+library(plotly)
 ```
 
 # Data
@@ -202,6 +203,24 @@ hb_agesex %>%
   
 ```
 
+```{r}
+#compare percent variation for winter not winter
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group == "All ages",
+         sex == "All",
+         hb_name == "All Scotland") %>% 
+  ggplot(aes(x = percent_variation,
+             y = is_winter)) +
+  geom_boxplot() +
+  geom_jitter(colour = "grey30", alpha = 0.5) 
+```
+
+
+
+
+
+
 #### Compare number of admissions by sex and winter/not winter
 
 No significant differences
@@ -246,6 +265,10 @@ hb_agesex %>%
                   y = mean_20182019_admissions, 
                   fill = sex), position = "dodge")
 ```
+#### Compare number of admissions for each age group for winter/not winter
+For age groups over 65, admissions are slightly higher in the winter. The same pattern is not seen for younger age groups
+The increase in admissions in winter months for age groups over 65 was more drastic pre-Covid than during Covid. This is potentially due to the lockdown measures in winter Dec2020/Jan-Feb2021 and some remaining restrictions in winter Dec2021/Jan-Feb 2022 as well as the vaccination campaign targeting these age groups in early 2021 with boosters in late 2021/early 2022.
+
 
 ```{r}
 #get line graph of average number of admissions over time for each age group
@@ -294,6 +317,43 @@ hb_agesex %>%
                   y = mean_20182019_admissions), group = 1, colour = "blue") +
     facet_wrap(~age_group)
 ```
+```{r}
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group != "All ages", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, age_group, is_winter) %>% 
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot() +
+    geom_col(aes(x = ordered(age_group, levels = c("Under 5",
+                                                       "5 - 14",
+                                                       "15 - 44",
+                                                       "45 - 64",
+                                                       "65 - 74",
+                                                       "75 - 84",
+                                                       "85 and over")),
+                  y = mean_admissions, 
+                  fill = is_winter), position = "dodge") 
+
+
+
+hb_agesex %>% 
+  filter(admission_type == "Emergency",
+         age_group != "All ages", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, age_group, is_winter) %>% 
+  summarise(mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+  geom_col(aes(x = ordered(age_group, levels = c("Under 5",
+                                                       "5 - 14",
+                                                       "15 - 44",
+                                                       "45 - 64",
+                                                       "65 - 74",
+                                                       "75 - 84",
+                                                       "85 and over")),
+                  y = mean_20182019_admissions, 
+                  fill = is_winter), position = "dodge")
+```
 
 
 
@@ -320,6 +380,240 @@ hb_specialty <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_special
 ```{r}
 hb_specialty %>% names()
 ```
+
+
+
+```{r}
+#join with hb_names to get hb names
+hb_specialty <- hb_specialty %>% 
+  left_join(hb_names, by = "hb")
+```
+
+
+```{r}
+#change week_ending into date format
+hb_specialty <- hb_specialty %>% 
+  mutate(week_ending = ymd(week_ending))
+```
+
+```{r}
+hb_specialty <- hb_specialty %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending)
+```
+
+
+```{r}
+#create winter and non winter groups
+hb_specialty <- hb_specialty %>% 
+  mutate(is_winter = if_else(
+    month %in% c("Dec", "Jan", "Feb"), TRUE, FALSE
+  ), .after = month)
+```
+
+```{r}
+#impute NAs in hb_name with all scotland b/c these are only for the all scotland hb code
+hb_specialty <- hb_specialty %>% 
+  mutate(hb_name = if_else(
+    is.na(hb_name),
+    "All Scotland",
+    hb_name
+  )) 
+```
+
+
+### Exploratory analysis
+
+```{r}
+#get graph for winter vs non-winter means by specialty for emergency admissions 
+
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, specialty, is_winter) %>% 
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot() +
+    geom_col(aes(x = specialty,
+                  y = mean_admissions, 
+                  fill = is_winter), position = "dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) 
+
+
+
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, specialty, is_winter) %>%  
+  summarise(mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+    geom_col(aes(x = specialty,
+                  y = mean_20182019_admissions, 
+                  fill = is_winter), position = "dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) 
+
+```
+```{r}
+#get winter vs non-winter means by specialty for emergency admissions 
+
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, specialty, is_winter) %>% 
+  summarise(median_admissions = median(number_admissions)) %>% 
+  ggplot() +
+    geom_col(aes(x = specialty,
+                  y = median_admissions, 
+                  fill = is_winter), position = "dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) 
+
+
+
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, specialty, is_winter) %>%  
+  summarise(mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+    geom_col(aes(x = specialty,
+                  y = mean_20182019_admissions, 
+                  fill = is_winter), position = "dodge") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) 
+
+```
+
+
+
+
+
+```{r}
+#grouped summary table by admission type
+hb_specialty %>% 
+  filter(specialty == "All",
+         hb_name == "All Scotland") %>% 
+  group_by(admission_type) %>% 
+  summarise(mean_admissions_covid = mean(number_admissions),
+            mean_admissions_precovid = mean(average20182019),
+            diff_mean_precovid_postcovid = mean_admissions_precovid - mean_admissions_covid)
+```
+
+```{r}
+#grouped summary table by specialty and admission type for all Scotland
+hb_specialty %>% 
+  filter(specialty != "All",
+         hb_name == "All Scotland",
+         admission_type != "All") %>% 
+  group_by(month, specialty, admission_type) %>% 
+  summarise(mean_admissions_covid = mean(number_admissions),
+            mean_admissions_precovid = mean(average20182019),
+            diff_mean_precovid_postcovid = mean_admissions_precovid - mean_admissions_covid) %>% 
+  ggplot() +
+  geom_point(aes(x = month,
+            y = mean_admissions_covid),
+            colour = "red") +
+  geom_line(aes(x = month,
+            y = mean_admissions_covid),
+            colour = "red", group = 1) +
+  geom_point(aes(x = month,
+            y = mean_admissions_precovid),
+            colour = "blue") +
+  geom_line(aes(x = month,
+            y = mean_admissions_precovid),
+            colour = "blue", group = 1) +
+  facet_grid(rows = vars(specialty),
+             cols = vars(admission_type), scales = "free_y")
+```
+
+
+```{r}
+#grouped summary table of mean admissions by hb, specialty and admission type for each month
+hb_specialty %>% 
+  filter(specialty != "All",
+         hb_name != "All Scotland",
+         admission_type != "All") %>% 
+  group_by(hb_name, month, specialty, admission_type) %>% 
+  summarise(mean_admissions_covid = mean(number_admissions),
+            mean_admissions_precovid = mean(average20182019),
+            #get diff in means precovid vs during covid
+            diff_mean_precovid_postcovid = mean_admissions_precovid - mean_admissions_covid) %>% 
+  #see only observations where the mean admissions increased during covid years
+  filter(diff_mean_precovid_postcovid <= -1)
+```
+
+```{r}
+hb_specialty %>% 
+  filter(specialty != "All",
+         hb_name != "All Scotland") %>% 
+  group_by(hb_name, specialty, is_winter, admission_type) %>% 
+  summarise(mean_admissions_covid = mean(number_admissions),
+            mean_admissions_precovid = mean(average20182019),
+            #get diff in means precovid vs during covid
+            diff_mean_precovid_postcovid = mean_admissions_precovid - mean_admissions_covid) %>% 
+  #see only observations where the mean admissions increased during covid years
+  filter(diff_mean_precovid_postcovid <= -1)
+```
+
+
+
+For the average 20182019 admissions, certain specialties saw an increase in average number of emergency admissions per week during the winter period. These were:
+-Medical (both including and exluding Cardiology and Cancer)
+-Pediatrics (both including and exluding Cardiology and Cancer)
+
+These same increases actually lessened during the Covid years 2020/2021/2022 to the point where there was only a small increase during the winter months. During the Covid years, there was a slight increase in average number of emergency admissions per week for Cardiology and for Surgery, which is notable because average emergency surgery admissions actually decreased in the winter pre-Covid
+
+
+
+
+```{r}
+#get line graph of average number of admissions over time for each specialty
+
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, week_ending, specialty) %>% 
+  summarise(mean_admissions = mean(number_admissions)) %>% 
+  ggplot() +
+    geom_line(aes(x = week_ending,
+                  y = mean_admissions, 
+                  colour = specialty)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)+
+  labs(x = "Date",
+       y = "Average number of admissions per week",
+       colour = "Specialty")
+```
+
+```{r}
+hb_specialty %>% 
+  filter(admission_type == "Emergency",
+         specialty != "All", 
+         hb_name == "All Scotland") %>% 
+  group_by(hb_name, month, specialty) %>% 
+  summarise(mean_20182019_admissions = mean(average20182019)) %>% 
+  ggplot() +
+  geom_point(aes(x = month,
+                  y = mean_20182019_admissions, 
+                  colour = specialty)) +
+    geom_line(aes(x = month,
+                  y = mean_20182019_admissions, 
+                  colour = specialty), group = hb_specialty$specialty) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+  labs(x = "Date",
+       y = "Average number of admissions per week",
+       colour = "Specialty")
+```
+
+
+
+
+
 
 ## HSCP Age/sex dataset
 
@@ -395,3 +689,276 @@ We should ask which dataset should be considered "correct" - I would suggest sel
 
 Can we get the proportion for no of admissions to population in each HB or HSCP?
 This would allow us to carry out statistical tests to see if any HBs or HSCPs have a higher proportion of admissions compared with Scotland overall
+
+
+
+
+
+## A&E attendance
+```{r}
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% clean_names()
+```
+
+### Variables in dataset
+
+```{r}
+ae_wait_times %>% names()
+
+ae_wait_times %>% distinct(hbt) # note: need to join hb names
+
+ae_wait_times %>% filter(is.na(number_meeting_target_aggregate))
+```
+
+```{r}
+#select only variables needed for summary table
+ae_attendance_summary <- ae_wait_times %>% 
+  select(month, hbt, number_of_attendances_aggregate, 
+         discharge_destination_admission_to_same,
+         discharge_destination_other_specialty,
+         discharge_destination_residence,
+         discharge_destination_transfer,
+         discharge_destination_unknown)
+```
+
+```{r}
+#create separate month and year columns
+ae_attendance_summary <- ae_attendance_summary %>% 
+  mutate(month_year = month, .before = month)
+
+ae_attendance_summary <- ae_attendance_summary %>% 
+  mutate(month = month(ym(month_year), label = TRUE),
+         year = year(ym(month_year)), .after = month_year)
+```
+
+```{r}
+#join with hb_names
+
+ae_attendance_summary <- ae_attendance_summary %>% 
+  left_join(hb_names, by = c("hbt" = "hb"))
+```
+
+
+```{r}
+#make all scotland attendance table
+all_scotland_attendance <- ae_attendance_summary %>% 
+  group_by(year, month) %>% 
+  filter(year >= 2017) %>% 
+  summarise(num_attendances = sum(number_of_attendances_aggregate),
+            admission_to_same = sum(discharge_destination_admission_to_same, na.rm = TRUE),
+            other_specialty = sum(discharge_destination_other_specialty, na.rm = TRUE),
+            residence = sum(discharge_destination_residence, na.rm = TRUE),
+            transfer = sum(discharge_destination_transfer, na.rm = TRUE),
+            unknown = sum(discharge_destination_unknown, na.rm = TRUE))
+
+#get proportions for destinations
+all_scotland_attendance <- all_scotland_attendance %>% 
+  rowwise() %>% 
+  mutate(
+    total_avg_discharge = sum(c(admission_to_same, other_specialty,
+                                residence, transfer, unknown)),
+    prop_admission = admission_to_same/total_avg_discharge,
+    prop_other_specialty = other_specialty/total_avg_discharge,
+    prop_residence = residence/total_avg_discharge,
+    prop_transfer = transfer/total_avg_discharge,
+    prop_unknown = unknown/total_avg_discharge
+  )
+
+```
+```{r}
+ae_attendance_summary <- ae_attendance_summary %>% 
+  group_by(hb_name, year, month) %>% 
+  summarise(num_attendances = sum(number_of_attendances_aggregate),
+           admission_to_same = sum(discharge_destination_admission_to_same, na.rm = TRUE),
+            other_specialty = sum(discharge_destination_other_specialty, na.rm = TRUE),
+            residence = sum(discharge_destination_residence, na.rm = TRUE),
+            transfer = sum(discharge_destination_transfer, na.rm = TRUE),
+            unknown = sum(discharge_destination_unknown, na.rm = TRUE))
+
+ae_attendance_summary <- ae_attendance_summary %>% 
+  rowwise() %>% 
+  mutate(
+    total_avg_discharge = sum(c(admission_to_same, other_specialty,
+                                residence, transfer, unknown)),
+    prop_admission = admission_to_same/total_avg_discharge,
+    prop_other_specialty = other_specialty/total_avg_discharge,
+    prop_residence = residence/total_avg_discharge,
+    prop_transfer = transfer/total_avg_discharge,
+    prop_unknown = unknown/total_avg_discharge
+  )
+```
+
+
+```{r}
+#add columns to all scotland
+all_scotland_attendance <- all_scotland_attendance %>% 
+  mutate(hb_name = "All Scotland")
+```
+
+```{r}
+#select relevant columns
+ae_attendance_summary <- ae_attendance_summary %>% 
+  filter(year >=2017) %>% 
+  select(year, month, hb_name, num_attendances, prop_admission, 
+         prop_other_specialty, prop_residence, prop_transfer, prop_unknown)
+
+all_scotland_attendance <- all_scotland_attendance %>% 
+  select(year, month, hb_name, num_attendances, prop_admission,
+         prop_other_specialty, prop_residence, prop_transfer, prop_unknown)
+```
+
+```{r}
+#bind rows
+ae_attendance_summary <- ae_attendance_summary %>% 
+  bind_rows(all_scotland_attendance)
+```
+
+```{r}
+#separate dataset into preCovid and Covid year ranges
+
+covid_ae_attendance <- ae_attendance_summary %>% 
+  filter(year >= 2020)
+
+precovid_ae_attendance <- ae_attendance_summary %>% 
+  filter(year < 2020)
+```
+
+```{r}
+#get 2017-2019 avgs to add as comparator to covid dataset
+
+precovid_ae_attendance <- precovid_ae_attendance %>% 
+  group_by(hb_name, month) %>% 
+  summarise(avg_attendances_20171819 = mean(num_attendances),
+            avg_prop_admission_20171829 = mean(prop_admission),
+            avg_prop_other_specialty_20171819 = mean(prop_other_specialty),
+            avg_prop_residence_20171819 = mean(prop_residence),
+            avg_prop_transfer_20171819 = mean(prop_transfer),
+            avg_prop_unknown_20171819 = mean(prop_unknown)) 
+```
+
+```{r}
+precovid_ae_attendance %>% names()
+#create key to join with covid_ae_attendance
+precovid_ae_attendance <- precovid_ae_attendance %>% 
+  mutate(hb_key = paste0(hb_name, "_", month), .before = hb_name)
+
+#select only key and avg variables
+precovid_ae_attendance <- precovid_ae_attendance %>% 
+  subset(select = -c(hb_name, month))
+
+  
+```
+
+```{r}
+covid_ae_attendance <- covid_ae_attendance %>% 
+  mutate(hb_key = paste0(hb_name, "_", month), .before = hb_name)
+```
+
+```{r}
+covid_ae_attendance <- covid_ae_attendance %>% 
+  left_join(precovid_ae_attendance, by = "hb_key")
+
+
+```
+
+
+
+```{r}
+covid_ae_attendance <- covid_ae_attendance %>% 
+  mutate(date = (paste0(year, "-", month)), .before = year) %>% 
+  mutate(date = ym(date), .before = year)
+
+```
+
+```{r}
+#put data in long format
+
+covid_ae_attendance <- covid_ae_attendance %>% 
+  pivot_longer(
+    cols = starts_with("prop"),
+    names_to = "destination",
+    values_to = "destination_prop"
+  )
+
+covid_ae_attendance <- covid_ae_attendance %>% 
+  mutate(
+    avg_prop_20171819 = case_when(
+      destination == "prop_admission" ~ avg_prop_admission_20171829,
+      destination == "prop_other_specialty" ~ avg_prop_other_specialty_20171819,
+      destination == "prop_residence" ~ avg_prop_residence_20171819,
+      destination == "prop_transfer" ~ avg_prop_transfer_20171819,
+      destination == "prop_unknown" ~ avg_prop_unknown_20171819
+    )
+  )
+
+covid_ae_attendance <- covid_ae_attendance %>% 
+  select(date, year, month, hb_key, hb_name, num_attendances, 
+         avg_attendances_20171819, destination,
+         destination_prop, avg_prop_20171819)
+
+
+```
+
+```{r}
+p <- covid_ae_attendance %>% 
+  filter(hb_name == "All Scotland") %>% 
+  ggplot() +
+  geom_point(aes(x = date,
+                 y = num_attendances,
+                 text = paste0("Date: ", year, "-", month,
+                              "<br>",
+                   "Number of admissions: ", num_attendances,
+                 "<br>",
+                 "2017-2019 avg admissions: ", 
+                 round(avg_attendances_20171819)))) +
+  geom_line(aes(x = date,
+                y = num_attendances)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+  labs(title = "Number of attendances at A&E 2020 - 2022 \n",
+       x = "Date",
+       y = "Number of Attendances")
+p %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+```
+
+```{r}
+p2 <- covid_ae_attendance %>% 
+  filter(hb_name == "All Scotland") %>% 
+  ggplot() +
+  geom_point(aes(x = date,
+                 y = destination_prop,
+                 colour = destination,
+                 text = paste0("Date: ", year, "-", month,
+                               "<br>",
+                               "Percentage: ", 
+                              round(destination_prop*100, digits = 2), 
+                              "%",
+                              "<br>",
+                              "2017-2019 percentage: ", 
+                              round(avg_prop_20171819*100, digits = 2), 
+                              "%"))) +
+  geom_line(aes(x = date,
+                 y = destination_prop,
+                group = destination)) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  scale_y_sqrt() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
+  labs(title = "Destination of attendances at A&E 2020 - 2022 \n",
+       x = "Date",
+       y = "Proportion of attendances",
+       colour = "Destination")
+p2 %>% 
+  ggplotly(tooltip = "text") %>% 
+  config(displayModeBar = FALSE)
+
+
+```
+

@@ -1,0 +1,420 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(scales)
+library(plotly)
+library(lubridate)
+library(sf)
+library(zoo)
+```
+
+
+
+## Covid Tab
+```{r}
+#load in beds and add year column
+beds <- read_csv("raw_data/non_covid_raw_data/beds_by_nhs_board_of_treatment_and_specialty.csv") %>% janitor::clean_names()
+
+beds <- beds %>% 
+mutate(quarter_date = yq(quarter),
+       year = year(quarter_date), 
+       .after = quarter)
+
+beds %>% 
+write_csv("clean_data/non_covid_data/beds.csv")
+```
+
+
+```{r}
+# bed percentage availablity for "all acute"
+# Will need to add filter for year based on user input
+beds_plotly <- beds %>%
+  filter(specialty_name == "All Acute") %>% 
+  group_by(quarter, specialty_name) %>%
+  summarise(mean_perc_occ = mean(percentage_occupancy)) %>% 
+  ggplot(aes(x = quarter, y = mean_perc_occ))+
+  geom_line(aes(colour = specialty_name, group = specialty_name))+
+  geom_point(aes(
+    text = paste0("Occupancy:",round(mean_perc_occ, digits = 2)," %\n", quarter)),
+    size = 0.5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs(title = "Mean bed availability for all Acute Patients",
+       x = "\nYear and Quarter",
+       y = "Average Percentage Occupancy")
+
+ggplotly(beds_plotly, tooltip = "text") %>% 
+  config(displayModeBar = FALSE) %>% 
+  layout(hoverlabel=list(bgcolor="white"))
+
+
+```
+
+## Scotland Shapefile
+#### ae_wait_times wrangling
+```{r}
+ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
+
+#make a date and year column with the first date of every month
+ae_wait_times <- ae_wait_times %>% 
+  mutate(date = ym(month), .after = month,
+         year = year(date))
+
+#make a percent column with percent of patients meeting the 4hr target time
+ae_wait_times <- ae_wait_times %>% 
+  mutate(percent_4hr_target_achieved = (number_meeting_target_aggregate/number_of_attendances_aggregate)*100)
+
+ae_wait_times %>% 
+write_csv("clean_data/non_covid_data/ae_wait_times.csv")
+```
+
+
+```{r}
+#write in the target data for the shapefile colours
+target_2007 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2007) %>% 
+  rename(ae_target_2007 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2007)
+  
+
+target_2008 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>%
+  filter(year == 2008) %>% 
+  rename(ae_target_2008 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2008)
+
+target_2009 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2009) %>% 
+  rename(ae_target_2009 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2009)
+
+target_2010 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2010) %>% 
+  rename(ae_target_2010 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2010)
+
+target_2011 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2011) %>% 
+  rename(ae_target_2011 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2011)
+
+target_2012 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2012) %>% 
+  rename(ae_target_2012 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2012)
+
+target_2013 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2013) %>% 
+  rename(ae_target_2013 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2013)
+
+target_2014 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved =
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2014) %>% 
+  rename(ae_target_2014 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2014)
+
+target_2015 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2015) %>% 
+  rename(ae_target_2015 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2015)
+
+target_2016 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2016) %>% 
+  rename(ae_target_2016 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2016)
+
+target_2017 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2017) %>% 
+  rename(ae_target_2017 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2017)
+
+target_2018 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2018) %>% 
+  rename(ae_target_2018 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2018)
+
+target_2019 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2019) %>% 
+  rename(ae_target_2019 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2019)
+
+target_2020 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2020) %>% 
+  rename(ae_target_2020 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2020)
+
+target_2021 <- ae_wait_times %>%
+  group_by(year, hbt) %>% 
+  summarise(ae_4hr_target_achieved = 
+              round(mean(percent_4hr_target_achieved, na.rm = TRUE), digits = 2)) %>% 
+  filter(year == 2021) %>% 
+  rename(ae_target_2021 = ae_4hr_target_achieved) %>% 
+  ungroup() %>% 
+  select(hbt,ae_target_2021)
+  
+```
+
+#### shape file wrangling
+```{r}
+scotland <- st_read("../SG_NHS_HealthBoards_2019_shapefile/SG_NHS_HealthBoards_2019.shp")
+
+# make a smaller version for performance issues
+scotland_smaller <- scotland %>% 
+  st_simplify(TRUE, dTolerance = 2000)
+#fixes problems caused by above 
+scotland_smaller <- sf::st_cast(scotland_smaller, "MULTIPOLYGON")
+
+#add in the A&E 4 hr target data for each year
+scotland_smaller <-  scotland_smaller %>% 
+  mutate(centres = st_centroid(st_make_valid(geometry))) %>%
+    mutate(lat = st_coordinates(centres)[,1],
+           long = st_coordinates(centres)[,2],
+           target_2007 = target_2007$ae_target_2007,
+           target_2008 = target_2008$ae_target_2008,
+           target_2009 = target_2009$ae_target_2009,
+           target_2010 = target_2010$ae_target_2010,
+           target_2011 = target_2011$ae_target_2011,
+           target_2012 = target_2012$ae_target_2012,
+           target_2013 = target_2013$ae_target_2013,
+           target_2014 = target_2014$ae_target_2014,
+           target_2015 = target_2015$ae_target_2015,
+           target_2016 = target_2016$ae_target_2016,
+           target_2017 = target_2017$ae_target_2017,
+           target_2018 = target_2018$ae_target_2018,
+           target_2019 = target_2019$ae_target_2019,
+           target_2020 = target_2020$ae_target_2020,
+           target_2021 = target_2021$ae_target_2021
+                  )
+
+#scotland_smaller$Shape_Area <- as.character(scotland_smaller$Shape_Area)
+st_write(scotland_smaller, "clean_data/shapefile/scotland_smaller.gpkg", append = FALSE) 
+
+## then to re-load data (also using the dplyr library):
+scotland_smaller <- st_read("clean_data/shapefile/scotland_smaller.gpkg") 
+ # mutate(Shape_Area = as.integer(Shape_Area))
+
+
+
+# # This will require filtered by the year selected in the dashboard
+# # Can we get the button or dropdown to pass eg "target_2016" to this in 2 places?
+#  mydata2 <- st_collection_extract(scotland_smaller, "POLYGON")
+# #I was then able to save the new file properly, i.e...
+# st_write(mydata2, "clean_data/scotland_smaller.shp", append = FALSE)
+# 
+# 
+# st_write(scotland_smaller, "clean_data/scotland_smaller.pgkg", append = FALSE)
+# 
+# scotland_smaller <- st_read("clean_data/scotland_smaller.shp")
+
+p <- ggplot(scotland_smaller) + 
+  geom_sf(aes(fill = target_2021, 
+              text = paste("<b>", HBName, "</b>\n", round(target_2021, digits = 2),"%", sep = ""))) + 
+  scale_fill_viridis_c(option = "plasma", name = "4Hr A&E Target %")+
+  theme_void()+
+  labs(title = "Percent of A&E depts making the 4hr target")
+
+p %>%
+  ggplotly(tooltip = "text") %>%
+  style(hoverlabel = list(bgcolor = "white"), hoveron = "fill")%>% 
+  config(displayModeBar = FALSE)
+```
+
+## SIMD graph 
+
+```{r}
+simd <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_and_simd.csv") %>% janitor::clean_names()
+
+simd <- simd %>% 
+mutate(quarter_date = yq(quarter),
+       year = year(quarter_date), 
+       .after = quarter)
+
+simd %>% 
+write_csv("clean_data/non_covid_data/simd.csv")
+```
+
+```{r}
+# average episodes by SIMD value
+# currently unfiltered for health board or admission type etc
+simd_plotly <- simd %>% 
+  drop_na(simd) %>%
+  mutate(simd = as.factor(simd)) %>% # gives each simd a separate colour
+  group_by(quarter, simd) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
+  geom_line(aes(colour = simd))+
+  geom_point(size = 0.5)+
+  scale_y_continuous(labels = scales::comma)+
+  labs(title = "Average Hospital Episodes by SIMD Deprevation score\n",
+       x = "\nYear and Quarter",
+       y = "Average Episodes\n")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplotly(simd_plotly) %>% 
+  config(displayModeBar = FALSE)
+```
+
+## Age Graph
+
+```{r}
+age_sex <- read_csv("raw_data/non_covid_raw_data/inpatient_and_daycase_by_nhs_board_of_treatment_age_and_sex.csv") %>% janitor::clean_names()
+
+age_sex <- age_sex %>%
+    mutate(quarter_date = yq(quarter),
+           year = year(quarter_date),
+           .after = quarter)
+
+age_sex %>% 
+  write_csv("clean_data/non_covid_data/age_sex.csv")
+```
+
+```{r}
+
+# Average number of episode for age groups
+# currently unfiltered by department or anything else
+age_plotly <- age_sex %>% 
+  #filter(min_date < year & year < max_date) %>% 
+  group_by(quarter, age) %>% 
+  summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_episodes))+
+  geom_line(aes(colour = age, group = age))+ 
+  geom_point(size = 0.5)+
+  labs(title = "Average Hospital Episodes by Age Groups\n",
+       x = "\nYear and Quarter",
+       y = "Average Episodes\n")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+ggplotly(age_plotly) %>% 
+  config(displayModeBar = FALSE)
+```
+
+## Gender
+
+```{r}
+sex_plotly <- age_sex %>% 
+  group_by(quarter, sex) %>% 
+  summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+  ggplot(aes(x = quarter, y = avg_length_of_episode))+
+  geom_line(aes(colour = sex, group = sex))+
+  #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
+  geom_point(size = 0.5)+
+  labs(title = "Average Hospital Episodes by Gender\n",
+       x = "\nYear and Quarter",
+       y = "Average Episodes\n")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+
+ggplotly(sex_plotly, hovertemplate = ) %>% 
+  config(displayModeBar = FALSE)
+```
+## A&E Tab
+```{r}
+#THE A&E WAI TTIMES IS HANDLED ABOVE IN THE SHAPEFILE WRANGLING SECTION AHHHHH IM SHOUTING
+
+# ae_wait_times <- read_csv("raw_data/non_covid_raw_data/monthly_ae_waitingtimes_202206.csv") %>% janitor::clean_names()
+# 
+# #make a date and year column with the first date of every month
+# ae_wait_times <- ae_wait_times %>% 
+#   mutate(date = ym(month), .after = month,
+#          year = year(date))
+# 
+# #make a percent column with percent of patients meeting the 4hr target time
+# ae_wait_times <- ae_wait_times %>% 
+#   mutate(percent_4hr_target_achieved = (number_meeting_target_aggregate/number_of_attendances_aggregate)*100)
+# 
+# ae_wait_times %>% 
+#   write_csv("clean_data/non_covid_data/ae_wait_times.csv")
+```
+
+```{r}
+library(rgdal)
+library(leaflet)
+scotland_smaller <-  readOGR("../SG_NHS_HealthBoards_2019_shapefile/",layer = "SG_NHS_HealthBoards_2019")
+shapeData <- spTransform(scotland_smaller, CRS("+proj=longlat +ellps=GRS80"))
+
+x = st_read("clean_data/shapefile/scotland_smaller.gpkg")  
+
+scotland <-  scotland %>% 
+  mutate(centres = st_centroid(st_make_valid(geometry))) %>%
+    mutate(lat = st_coordinates(centres)[,1],
+           long = st_coordinates(centres)[,2])
+
+
+scotland <- st_transform(x, '+proj=longlat +datum=WGS84')
+
+pal <- colorNumeric("viridis", NULL)
+
+m <- leaflet() 
+m %>% addTiles() %>% 
+  addPolygons(data=scotland,
+              smoothFactor = 0.3, 
+              fillOpacity = 1,
+              fillColor = ~pal(target_2007),
+              label = ~paste0( HBName,": ", target_2007),
+              weight = 1, 
+              highlightOptions = highlightOptions(color = "white", 
+                                                            weight = 2, 
+                                                            bringToFront = TRUE)) %>% 
+  addLegend(pal = pal, values = scotland$target_2007, opacity = 1, )
+```
+
