@@ -8,6 +8,7 @@ library(shinydashboard)
 library(shinyWidgets)
 library(lubridate)
 library(plotly)
+library(leaflet)
 
 
 # data wrangling ----------------------------------------------------------
@@ -75,6 +76,16 @@ hb_simd <- read_csv("clean_data/hb_simd_clean.csv")
 all_healthboards_simd <- hb_simd %>% 
   distinct(hb_name) %>% 
   arrange(hb_name) %>% 
+  pull()
+
+all_simd_map <- hb_simd %>% 
+  distinct(simd_quintile) %>% 
+  arrange(simd_quintile) %>% 
+  pull()
+
+all_simd_year <- hb_simd %>%
+  distinct(year) %>% 
+  arrange(year) %>% 
   pull()
 
 # ui ----------------------------------------------------------------------
@@ -346,7 +357,30 @@ ui <- navbarPage(
   
   tabPanel(tags$h5("Geospatial Maps"),
            
-           
+           fluidRow(
+             box(
+               title = tags$h1("Admissions per Healthboard Area for SIMD Levels"),
+               status = "warning",
+               solidHeader = TRUE
+             ),
+             
+             box(
+               title = tags$h1("Select SIMD Level and Year"),
+               status = "warning",
+               solidHeader = TRUE,
+               
+               selectInput(inputId = "simd_map",
+                           label = "",
+                           choices = all_simd_map),
+               
+               selectInput(inputId = "simd_map_year",
+                           label = "",
+                           choices = all_simd_year)
+             )
+
+           ),
+
+           leafletOutput("simd_leaflet", height = "100vh", width = "100vw")
   ),
   
   
@@ -648,6 +682,97 @@ server <- function(input, output) {
     simd_attendance_plotly %>% 
       ggplotly(tooltip = "text") %>% 
       config(displayModeBar = FALSE)
+  })
+  
+  filtered_simd_map <- reactive({
+    hb_simd %>% 
+      filter(simd_quintile == input$simd_map,
+             year == input$simd_map_year) %>% 
+      filter(admission_type == "Emergency") %>% 
+        mutate(week_ending = ymd(week_ending)) %>% 
+        mutate(month = month(week_ending, label = TRUE),
+               year = year(week_ending), .after = week_ending) %>% 
+      group_by(hb_name, year, simd_quintile) %>% 
+      summarise(mean_admissions = mean(number_admissions)*100)
+  })
+  
+  
+  output$simd_leaflet <- renderLeaflet({
+    filtered_simd_map() %>%
+      
+      leaflet() %>% 
+      addTiles() %>% 
+      setView(-4, 55.5, zoom = 7) %>% 
+      addCircleMarkers(lng = -4.975, 
+                       lat = 55.445, 
+                       color = "red",
+                       popup="Ayrshire and Arran",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -2.83333000, 
+                       lat = 55.58333000, 
+                       color = "red",
+                       popup="Borders",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.857784, 
+                       lat = 54.988285, 
+                       color = "red",
+                       popup="Dumfries and Galloway",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.78535, 
+                       lat = 56.0021, 
+                       color = "red",
+                       popup="Forth Valley",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -2.988, 
+                       lat = 57.228, 
+                       color = "red",
+                       popup="Grampian",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -4.71, 
+                       lat = 57.12, 
+                       color = "red",
+                       popup="Highland",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.083999664, 
+                       lat = 55.905496378, 
+                       color = "red",
+                       popup="Lothian",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.0, 
+                       lat = 59.0, 
+                       color = "red",
+                       popup="Orkney",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -1.2689, 
+                       lat = 60.3038, 
+                       color = "red",
+                       popup="Shetland",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -7.02, 
+                       lat =  57.76, 
+                       color = "red",
+                       popup="Western Isles",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.1999992, 
+                       lat =    56.249999, 
+                       color = "red",
+                       popup="Fife",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.7333304, 
+                       lat = 56.6999972, 
+                       color = "red",
+                       popup="Tayside",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -4.4057, 
+                       lat = 55.90137, 
+                       color = "red",
+                       popup="Greater Glasgow and Clyde",
+                       radius = hb_simd$mean_admissions, weight = 1) %>% 
+      addCircleMarkers(lng = -3.83333, 
+                       lat = 55.583331, 
+                       color = "red",
+                       popup="Lanarkshire",
+                       radius = hb_simd$mean_admissions, weight = 1)
   })
   
 }

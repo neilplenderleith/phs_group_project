@@ -20,6 +20,15 @@ hb_simd <- hb_simd %>%
 hb_simd
 
 
+hb_simd %>% 
+  filter(admission_type == "Emergency") %>% 
+  mutate(week_ending = ymd(week_ending)) %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending) %>% 
+  group_by(hb_name, year, simd_quintile) %>% 
+  summarise(mean_admissions = mean(number_admissions))
+
+
 
 hb_simd <- hb_simd %>% 
   mutate(hb_name = if_else(
@@ -113,7 +122,10 @@ hb_simd <- hb_simd %>%
 #                    popup="Lanarkshire",
 #                    radius = sqrt(143644	/ 10), weight = 1) 
 
-
+hb_simd %>%
+  filter(admission_type == "Emergency") %>% 
+  group_by(hb, simd_quintile) %>% 
+  summarise(sum = sum(number_admissions))
 
 #number of admissions among the most deprived communities 
 hb_simd %>% 
