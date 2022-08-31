@@ -836,7 +836,7 @@ precovid_ae_attendance <- precovid_ae_attendance %>%
 ```
 
 ```{r}
-precovid_ae_attendance %>% names()
+
 #create key to join with covid_ae_attendance
 precovid_ae_attendance <- precovid_ae_attendance %>% 
   mutate(hb_key = paste0(hb_name, "_", month), .before = hb_name)
@@ -899,7 +899,7 @@ covid_ae_attendance <- covid_ae_attendance %>%
 ```
 
 ```{r}
-p <- covid_ae_attendance %>% 
+covid_ae_attendance_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
   geom_point(aes(x = date,
@@ -920,14 +920,14 @@ p <- covid_ae_attendance %>%
   labs(title = "Number of attendances at A&E 2020 - 2022 \n",
        x = "Date",
        y = "Number of Attendances")
-p %>% 
+covid_ae_attendance_plotly %>% 
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ```{r}
-p2 <- covid_ae_attendance %>% 
+covid_ae_destinations_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
   geom_point(aes(x = date,
@@ -955,7 +955,7 @@ p2 <- covid_ae_attendance %>%
        x = "Date",
        y = "Proportion of attendances",
        colour = "Destination")
-p2 %>% 
+covid_ae_destinations_plotly %>% 
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE)
 
