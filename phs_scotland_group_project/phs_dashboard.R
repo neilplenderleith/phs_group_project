@@ -132,7 +132,7 @@ hb_agesex <- read_csv("clean_data/covid_agesex.csv")
 all_hb_ages <- hb_agesex %>%
   filter(age_group != "All ages") %>% 
   distinct(age_group) %>% 
-  arrange(age_group) %>% 
+  arrange(factor(age_group, levels = c("Under 5", "5 - 14", "15 - 44", "45 - 64", "65 - 74", "75 - 84", "85 and over"))) %>% 
   pull()
 
 
@@ -142,7 +142,7 @@ ui <- navbarPage(
   
   theme = bs_theme(bootswatch = "flatly"),
   
-  title = tags$h4("Public Health Scotland Dashboard Project"),
+  title = tags$h4("Accute Hospital Activity Dashboard"),
   
   header = tagList(
     useShinydashboard()
@@ -152,7 +152,7 @@ ui <- navbarPage(
   
   fluid = TRUE,
   
-  tabPanel(tags$h5("A&E Overview"),
+  tabPanel(tags$h5("Overview"),
            
            fluidRow(
              
@@ -166,13 +166,13 @@ ui <- navbarPage(
              ),
              
              box(
-               title = tags$h3("Map Displaying Percentage of A&E Departments Meeting 4hr Target per Healthboard by Year"),
+               title = tags$h3("Percentage of A&E Departments Meeting 4hr Target by Healthboard"),
                status = "warning",
                solidHeader = TRUE,
                height = 750,
                
                sliderInput(inputId = "leaflet_year_slider",
-                           label = "Please Select Year",
+                           label = "Please select year",
                            min = 2007,
                            max = 2021,
                            sep = "",
@@ -186,7 +186,7 @@ ui <- navbarPage(
   ),
   
   
-  tabPanel(tags$h5("Winter Crisis"),
+  tabPanel(tags$h5("Discharge Destinations"),
            
            sidebarLayout(
              
@@ -194,10 +194,10 @@ ui <- navbarPage(
                
                width = 4,
                
-               titlePanel(tags$h1("Winter Crisis Plot Controls")),
+               titlePanel(tags$h1("Discharge destination plot controls")),
                
                sliderInput(inputId = "winter_wait",
-                           label = tags$h2("Year range"),
+                           label = tags$h2("Please select year range"),
                            min = min_year_wait,
                            max = max_year_wait,
                            value = c(min_year_wait, max_year_wait),
@@ -206,7 +206,7 @@ ui <- navbarPage(
                ),
                
                radioButtons(inputId = "discharge_destination",
-                            label = tags$h2("Patient Discharge Destination"),
+                            label = tags$h2("Patient discharge destination"),
                             choices = all_discharges
                )
              ),
@@ -226,18 +226,18 @@ ui <- navbarPage(
   ),
   
   
-  tabPanel(tags$h5("Impact of COVID-19"),
+  tabPanel(tags$h5("COVID-19 A&E Attendances"),
            
            selectInput(
              inputId = "health_boards",
-             label = tags$h3("Select Health Board"),
+             label = tags$h3("Select healthboard"),
              choices = all_healthboards
            ),
            
            fluidRow(
              
              box(
-               title = tags$h3("Number of attendances at A&E 2020 - 2022"),
+               title = tags$h3("Number of Attendances at A&E 2020 - 2022"),
                status = "primary",
                solidHeader = TRUE,
                width = 12,
@@ -247,7 +247,7 @@ ui <- navbarPage(
              ),
              
              box(
-               title = tags$h3("Destination of attendances at A&E 2020 - 2022"),
+               title = tags$h3("Mean Proportion of Attendances at A&E 2020 - 2022"),
                status = "primary",
                solidHeader = TRUE,
                width = 12,
@@ -259,7 +259,7 @@ ui <- navbarPage(
   ),
   
   
-  tabPanel(tags$h5("Age Group"),
+  tabPanel(tags$h5("Age"),
            
            sidebarLayout(
              
@@ -267,17 +267,17 @@ ui <- navbarPage(
                
                width = 4,
                
-               titlePanel(tags$h1("Age Demographic Plot Controls")),
+               titlePanel(tags$h1("Hospital episode plot controls")),
                
                checkboxGroupInput(
                  inputId = "age_groups",
-                 label = tags$h3("Select Patient Age Group(s)"),
+                 label = tags$h3("Select patient age group(s)"),
                  choices = all_ages,
                  selected = all_ages
                ),
                
                sliderInput(inputId = "age_year",
-                           label = tags$h2("Year range"),
+                           label = tags$h2("Please select year range"),
                            min = min_year_age,
                            max = max_year_age,
                            value = c(min_year_age, max_year_age),
@@ -285,11 +285,11 @@ ui <- navbarPage(
                            sep = ""
                ),
                
-               titlePanel(tags$h1("Accute Patient Bed Availability Controls")),
+               titlePanel(tags$h1("Admission plot controls")),
                
                checkboxGroupInput(
                  inputId = "hb_age_groups",
-                 label = tags$h3("Select Patient Age Group(s)"),
+                 label = tags$h3("Select patient age group(s)"),
                  choices = all_hb_ages,
                  selected = all_hb_ages
                )
@@ -299,7 +299,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Average Hospital Episodes by Age Groups"),
+                 title = tags$h3("Mean Hospital Episodes by Age Group"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -309,7 +309,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Bed Availability for all Acute Patients"),
+                 title = tags$h3("Mean Admissions for all Accute Patients"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -329,17 +329,17 @@ ui <- navbarPage(
                
                width = 4,
                
-               titlePanel(tags$h1("Sex Demographic Plot Controls")),
+               titlePanel(tags$h1("Hospital episode plot controls")),
                
                checkboxGroupInput(
                  inputId = "sex_groups",
-                 label = tags$h3("Select Patient Sex"),
+                 label = tags$h3("Select patient sex"),
                  choices = all_sex,
                  selected = all_sex
                ),
                
                sliderInput(inputId = "sex_year",
-                           label = tags$h2("Year range"),
+                           label = tags$h2("Please select year range"),
                            min = min_year_sex,
                            max = max_year_sex,
                            value = c(min_year_sex, max_year_sex),
@@ -352,7 +352,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Average Hospital Episodes by Sex"),
+                 title = tags$h3("Mean Hospital Episodes by Sex"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -372,17 +372,17 @@ ui <- navbarPage(
                
                width = 4,
                
-               titlePanel(tags$h1("SIMD Demographic Plot Controls")),
+               titlePanel(tags$h1("Hospital episodes plot controls")),
                
                checkboxGroupInput(
                  inputId = "simd_groups",
-                 label = tags$h3("Select Patient SIMD"),
+                 label = tags$h3("Select patient SIMD"),
                  choices = all_simd,
                  selected = all_simd
                ),
                
                sliderInput(inputId = "simd_year",
-                           label = tags$h2("Year range"),
+                           label = tags$h2("Please select year range"),
                            min = min_year_simd,
                            max = max_year_simd,
                            value = c(min_year_simd, max_year_simd),
@@ -396,10 +396,10 @@ ui <- navbarPage(
                
                br(),
                
-               titlePanel(tags$h1("SIMD A&E Attendance Plot Controls")),
+               titlePanel(tags$h1("A&E attendance plot controls")),
                
                selectInput(inputId = "simd_attendance",
-                           label = tags$h2("Select Healthboard"),
+                           label = tags$h2("Select healthboard"),
                            choices = all_healthboards_simd)
                
              ),
@@ -408,7 +408,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Average Hospital Episodes by SIMD Deprivation score"),
+                 title = tags$h3("Mean Hospital Episodes by SIMD Quintile"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -418,7 +418,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Emergency Admissions per SIMD (2020-2022)"),
+                 title = tags$h3("Mean Emergency Admissions by SIMD Quintile (2020-2022)"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -430,26 +430,26 @@ ui <- navbarPage(
   ),
   
   
-  tabPanel(tags$h5("Geospatial Maps"),
+  tabPanel(tags$h5("SIMD Admission Maps"),
            
            fluidRow(
              box(
-               title = tags$h1("Admissions per Healthboard Area for SIMD Levels"),
+               title = tags$h1("SIMD Quintile Emergency Admissions per Healthboard"),
                status = "warning",
                solidHeader = TRUE
              ),
              
              box(
-               title = tags$h1("Select SIMD Level and Year"),
+               title = tags$h1("Select SIMD level and year"),
                status = "warning",
                solidHeader = TRUE,
                
                selectInput(inputId = "simd_map",
-                           label = "",
+                           label = "Please select SIMD quintile",
                            choices = all_simd_map),
                
                selectInput(inputId = "simd_map_year",
-                           label = "",
+                           label = "Please select year",
                            choices = all_simd_year)
              )
 
@@ -508,8 +508,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7) +
-      labs(title = "Proportion of attendances to selected destination \n",
-           x = "\n Date",
+      labs(x = "\n Date",
            y = "Proportion of attendances")
     
     winter_plotly %>% 
@@ -524,7 +523,7 @@ server <- function(input, output) {
       group_by(date, department_type) %>% 
       summarise(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
       ggplot(aes(x = date, y = avg_4hr_target_made))+
-      geom_line(aes(colour = department_type))+
+      geom_line(colour = "black")+
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9),
@@ -546,8 +545,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       labs(x = "\nDate",
-           y = "Percentage",
-           colour = "Department Type")
+           y = "Percentage")
     
     ggplotly(ae_wait_plotly)
   })
@@ -601,7 +599,7 @@ server <- function(input, output) {
                                    "<br>",
                                    "Number of admissions: ", num_attendances,
                                    "<br>",
-                                   "2017-2019 avg admissions: ", 
+                                   "2017-2019 mean admissions: ", 
                                    round(avg_attendances_20171819))
       )) +
       geom_line(aes(x = date,
@@ -615,9 +613,9 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-      labs(title = "Comparison with 2018-2019 averages\n",
+      labs(title = "Comparison with 2018-2019 means\n",
            x = "\nDate",
-           y = "Number of Attendances")
+           y = "Number of attendances")
     
     covid_ae_attendance_plotly %>% 
       ggplotly(tooltip = "text") %>% 
@@ -680,10 +678,10 @@ server <- function(input, output) {
       geom_line(aes(colour = age, group = age))+ 
       geom_point(aes(colour = age,
                      text = paste0("Date: ", quarter, "<br>",
-                                   "Average Episodes: ", round(avg_episodes, digits = 2), "<br>",
-                                   "Age Group: ", age)),size = 0.5)+
-      labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n",
+                                   "Mean episodes: ", round(avg_episodes, digits = 2), "<br>",
+                                   "Age group: ", age)),size = 0.5)+
+      labs(x = "\nYear and quarter",
+           y = "Mean episodes\n",
            colour = "Age")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
@@ -720,7 +718,7 @@ server <- function(input, output) {
                                   "Winter", "Not winter"),
                    text = paste0("Age group: ", age_group,
                                  "<br>",
-                                 "Average number of admissions: ", 
+                                 "Mean number of admissions: ", 
                                  round(mean_admissions),
                                  "<br>",
                                  "2018/2019 avg admissions: ", 
@@ -755,8 +753,8 @@ server <- function(input, output) {
                      text = paste0("Date: ", quarter, "<br>", 
                                    "Gender: ", sex)),
                  size = 0.5)+
-      labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n",
+      labs(x = "\nYear and quarter",
+           y = "Mean episodes\n",
            colour = "Sex")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
@@ -783,12 +781,12 @@ server <- function(input, output) {
       ggplot(aes(x = quarter, y = avg_episodes, group = simd))+
       geom_line(aes(colour = simd))+
       geom_point(aes(text = paste0("Date: ", quarter, "<br>",
-                                   "Average Episodes: ", round(avg_episodes, digits = 2), "<br>",
+                                   "Mean episodes: ", round(avg_episodes, digits = 2), "<br>",
                                    "SIMD: ", simd),
                      colour = simd),size = 0.5)+
       scale_y_continuous(labels = scales::comma)+
-      labs(x = "\nYear and Quarter",
-           y = "Average Episodes\n",
+      labs(x = "\nYear and quarter",
+           y = "Mean episodes\n",
            colour = "SIMD")+
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
@@ -830,8 +828,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-      labs(title = "Mean admissions per SIMD \n",
-           x = "Date",
+      labs(x = "Date",
            y = "Mean admissions",
            colour = "SIMD")
 
