@@ -300,7 +300,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Hospital Episodes by Age Group"),
+                 title = tags$h3("Mean Number of Episodes by Age Group"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -353,7 +353,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Hospital Episodes by Sex"),
+                 title = tags$h3("Mean Number of Episodes by Sex"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -409,7 +409,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Hospital Episodes by SIMD Quintile"),
+                 title = tags$h3("Mean Number of Episodes by SIMD Quintile"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -742,18 +742,19 @@ server <- function(input, output) {
       filter(year >= input$sex_year[1] & year <= input$sex_year[2],
              sex == input$sex_groups) %>% 
       group_by(quarter, sex) %>% 
-      summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE))
+      summarise(avg_episodes = mean(episodes, na.rm = TRUE))
   })
   
   output$sex_plot <- renderPlotly({
     sex_plotly <- filtered_sex_plot() %>% 
       # group_by(quarter, sex) %>% 
-      # summarise(avg_length_of_episode = mean(average_length_of_episode, na.rm = TRUE)) %>% 
-      ggplot(aes(x = quarter, y = avg_length_of_episode))+
+      # summarise(avg_episodes = mean(average_length_of_episode, na.rm = TRUE)) %>% 
+      ggplot(aes(x = quarter, y = avg_episodes))+
       geom_line(aes(colour = sex, group = sex))+
       geom_point(aes(colour = sex, 
                      text = paste0("Date: ", quarter, "<br>", 
-                                   "Gender: ", sex)),
+                                   "Sex: ", sex, "<br>",
+                                   "Mean episodes: ", round(avg_episodes, digits = 2))),
                  size = 0.5)+
       labs(x = "\nYear and quarter",
            y = "Mean episodes\n",
@@ -829,6 +830,7 @@ server <- function(input, output) {
       scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
       scale_y_sqrt() +
       scale_color_brewer(palette = "Paired") +
+      theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
