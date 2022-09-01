@@ -214,7 +214,7 @@ ui <- navbarPage(
              
              mainPanel = mainPanel(
                box(
-                 title = tags$h3("Proportion of Patients Being Dispatched to Different Destinations"),
+                 title = tags$h3("Proportion of Patients Being Dicharged to Different Destinations"),
                  status = "primary",
                  solidHeader = TRUE,
                  width = 12,
@@ -612,7 +612,7 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-      labs(title = "Comparison with 2018-2019 means\n",
+      labs(title = "Comparison with 2017-2019 means\n",
            x = "\nDate",
            y = "Number of attendances")
     
@@ -848,107 +848,107 @@ server <- function(input, output) {
   filtered_simd_map <- reactive({
     
       hb_simd %>%
-      filter(admission_type == "Emergency") %>%
-        mutate(week_ending = ymd(week_ending)) %>%
-      mutate(month = month(week_ending, label = TRUE),
-               year = year(week_ending), .after = week_ending) %>%
-      group_by(hb_name, year, simd_quintile) %>%
-      summarise(mean_admissions = mean(number_admissions)/10) %>% 
-      filter(simd_quintile == input$simd_map,
+      filter(admission_type == "Emergency",
              year == input$simd_map_year) %>%
+      mutate(week_ending = ymd(week_ending)) %>%
+      mutate(month = month(week_ending, label = TRUE),
+             year = year(week_ending), .after = week_ending) %>%
+      group_by(hb_name, year, simd_quintile) %>%
+      summarise(mean_admissions = mean(number_admissions)) %>% 
+      filter(simd_quintile == input$simd_map) %>%
       arrange(hb_name)
   })
   
-
+  
   output$simd_leaflet <- renderLeaflet({
     
-      leaflet() %>%
+    leaflet() %>%
       addTiles() %>%
       setView(-4, 55.5, zoom = 7) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Ayrshire and Arran"),
-                      lng = -4.975,
+                       lng = -4.975,
                        lat = 55.445,
                        color = "red",
-                       popup= ~paste0("Ayrshire and Arran", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>% 
+                       popup= ~paste0("Ayrshire and Arran", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>% 
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Borders"),
                        lng = -2.83333000,
                        lat = 55.58333000,
                        color = "red",
-                       popup=~paste0("Borders", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Borders", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Dumfries and Galloway"),
                        lng = -3.857784,
                        lat = 54.988285,
                        color = "red",
-                       popup=~paste0("Dumfries and Galloway", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Dumfries and Galloway", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Forth Valley"),
                        lng = -3.78535,
                        lat = 56.0021,
                        color = "red",
-                       popup=~paste0("Forth Valley", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Forth Valley", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Grampian"),
                        lng = -2.988,
                        lat = 57.228,
                        color = "red",
-                       popup=~paste0("Grampian", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Grampian", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Highland"),
                        lng = -4.71,
                        lat = 57.12,
                        color = "red",
-                       popup=~paste0("Highland", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Highland", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Lothian"),
                        lng = -3.083999664,
                        lat = 55.905496378,
                        color = "red",
-                       popup=~paste0("Lothian", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Lothian", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Orkney"),
                        lng = -3.0,
                        lat = 59.0,
                        color = "red",
-                       popup=~paste0("Orkney", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Orkney", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Shetland"),
                        lng = -1.2689,
                        lat = 60.3038,
                        color = "red",
-                       popup=~paste0("Shetland", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Shetland", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Western Isles"),
                        lng = -7.02,
                        lat =  57.76,
                        color = "red",
-                       popup=~paste0("Western Isles", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Western Isles", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Fife"),
                        lng = -3.1999992,
                        lat =    56.249999,
                        color = "red",
-                       popup=~paste0("Fife", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Fife", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Tayside"),
                        lng = -3.7333304,
                        lat = 56.6999972,
                        color = "red",
-                       popup=~paste0("Tayside", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Tayside", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Greater Glasgow and Clyde"),
                        lng = -4.4057,
                        lat = 55.90137,
                        color = "red",
-                       popup=~paste0("Greater Glasgow and Clyde", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1) %>%
+                       popup=~paste0("Greater Glasgow and Clyde", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1) %>%
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "Lanarkshire"),
                        lng = -3.83333,
                        lat = 55.583331,
                        color = "red",
-                       popup=~paste0("Lanarkshire", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2), "%"),
-                       radius = ~mean_admissions, weight = 1)
+                       popup=~paste0("Lanarkshire", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
+                       radius = ~(mean_admissions/5), weight = 1)
   })
   
 }
