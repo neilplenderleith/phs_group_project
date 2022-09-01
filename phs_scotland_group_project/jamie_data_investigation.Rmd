@@ -968,8 +968,17 @@ covid_ae_attendance <- covid_ae_attendance %>%
 ```
 
 
+
+
 ### Graphs for dashboard
+
 ```{r}
+covid_ae_attendance <- read_csv("clean_data/covid_ae_attendance.csv")
+```
+
+```{r}
+#
+# Title = Number of attendances at A&E 2020 - 2022
 covid_ae_attendance_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
@@ -980,17 +989,22 @@ covid_ae_attendance_plotly <- covid_ae_attendance %>%
                    "Number of admissions: ", num_attendances,
                  "<br>",
                  "2017-2019 avg admissions: ", 
-                 round(avg_attendances_20171819)))) +
+                 round(avg_attendances_20171819))
+                 )) +
   geom_line(aes(x = date,
                 y = num_attendances)) +
+  geom_line(aes(x = date,
+                y = avg_attendances_20171819), 
+            colour = "grey60", alpha = 0.5) +
   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
    geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-  labs(title = "Number of attendances at A&E 2020 - 2022 \n",
+  labs(title = "Comparison with 2018-2019 averages \n",
        x = "Date",
        y = "Number of Attendances")
+
 covid_ae_attendance_plotly %>% 
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE) %>% 
@@ -998,6 +1012,7 @@ covid_ae_attendance_plotly %>%
 ```
 
 ```{r}
+#Title: Destination of attendances at A&E 2020 - 2022
 covid_ae_destinations_plotly <- covid_ae_attendance %>% 
   filter(hb_name == "All Scotland") %>% 
   ggplot() +
@@ -1016,13 +1031,17 @@ covid_ae_destinations_plotly <- covid_ae_attendance %>%
   geom_line(aes(x = date,
                  y = destination_prop,
                 group = destination)) +
+   geom_line(aes(x = date,
+                 y = avg_prop_20171819,
+                 colour = destination,
+                group = destination), alpha = 0.5) +
   scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
   scale_y_sqrt() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
    geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
   geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50")+
-  labs(title = "Destination of attendances at A&E 2020 - 2022 \n",
+  labs(title = "Comparison with proportion of attendances at A&E 2017 - 2019 \n",
        x = "Date",
        y = "Proportion of attendances",
        colour = "Destination")
@@ -1137,5 +1156,46 @@ winter_plotly %>%
   config(displayModeBar = FALSE) %>% 
 layout(hoverlabel = list(bgcolor = "white"))
 
+```
+
+## Graphs for PPT
+
+```{r}
+ae_wait_times <- read_csv("clean_data/non_covid_data/ae_wait_times.csv")
+```
+
+```{r}
+# draw percentage of 4 hour wait for all years
+for_plotly <- ae_wait_times %>% 
+  filter(department_type == "Emergency Department") %>% 
+  group_by(date, department_type) %>% 
+  summarise(avg_4hr_target_made = mean(percent_4hr_target_achieved)) %>% 
+  ggplot(aes(x = date, y = avg_4hr_target_made))+
+  geom_line(aes(colour = department_type))+
+  scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7))+
+  geom_smooth()+
+  geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4)+
+  geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4)+
+  labs(title = "Percentage of A&E departments meeting the 4 hr target turnaround for patients",
+       subtitle = "added in vertical lines for January to help",
+       x = "Date",
+       y = "Average percentage meeting target")
+
+ggplotly(for_plotly)
+ggsave("visualisations_for_ppt/4hr_target_line_graph.png")
 ```
 
