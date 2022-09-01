@@ -92,6 +92,14 @@ hb_simd <- read_csv("raw_data/covid_raw_data/hospital_admissions_hb_simd_2022030
   clean_names()
 hb_simd
 ```
+```{r}
+hb_simd
+```
+
+```{r}
+board_names
+```
+
 
 ```{r}
 hb_simd <- left_join(hb_simd, board_names, by = "hb")
@@ -233,6 +241,9 @@ hb_simd %>%
    scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") 
 ```
 
+```{r}
+library(tidyverse)
+```
 
 
 ```{r}
@@ -311,7 +322,7 @@ hb_simd %>%
 ```
 
 ```{r}
-
+#number of admissions per hb_board 
 hb_simd %>% 
  filter(admission_type == "Emergency") %>% 
 
@@ -320,7 +331,7 @@ leaflet() %>%
   addTiles() %>% 
   addCircleMarkers(lng = -4.975, 
                    lat = 55.445, 
-                   color = "blue",
+                   color = hb_simd$simd_quintile,
                    popup="Ayrshire and Arran",
                    radius = sqrt(98202/ 10), weight = 1) %>% 
   addCircleMarkers(lng = -2.83333000, 
@@ -857,3 +868,908 @@ p2 %>%
   ggplotly(tooltip = "text") %>% 
   config(displayModeBar = FALSE)
 ```
+
+
+
+```{r}
+hb_simd %>% 
+  group_by(hb_name, year, simd_quintile) %>% 
+  summarise(mean_admissions = mean(number_admissions), 
+            mean_201819_admissions = mean(average20182019)) %>% 
+  filter(simd_quintile == "5", 
+         year == "2020")
+```
+
+```{r}
+hb_simd <- hb_simd %>% 
+  mutate(week_ending = ymd(week_ending))
+
+hb_simd <- hb_simd %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending)
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "5",
+         year == "2020")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "4",
+         year == "2020")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "3",
+         year == "2020")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "2",
+         year == "2020")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "1",
+         year == "2020")
+
+hb_simd <- hb_simd %>% 
+  mutate(week_ending = ymd(week_ending))
+
+hb_simd <- hb_simd %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending)
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "5")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "4")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "3")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "2")
+
+hb_simd %>%
+  group_by(hb_name, year, simd_quintile) %>%
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>%
+  filter(simd_quintile == "1")
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+
+```{r}
+####number of admissions among the the least deprived communities 
+hb_simd %>% 
+ filter(admission_type == "Emergency", 
+        simd_quintile == "5") %>% 
+
+  
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = -4.975, 
+                   lat = 55.445, 
+                   color = "purple",
+                   popup="Ayrshire and Arran",
+                   radius = sqrt(98202/ 10), weight = 1) %>% 
+  addCircleMarkers(lng = -2.83333000, 
+                   lat = 55.58333000, 
+                   color = "purple",
+                   popup="Borders",
+                   radius = sqrt(20656/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.857784, 
+                   lat = 54.988285, 
+                   color = "purple",
+                   popup="Dumfries and Galloway",
+                   radius = sqrt(33981/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.78535, 
+                   lat = 56.0021, 
+                   color = "purple",
+                   popup="Forth Valley",
+                   radius = sqrt(64750/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -2.988, 
+                   lat = 57.228, 
+                   color = "purple",
+                   popup="Grampian",
+                   radius = sqrt(108032/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.71, 
+                   lat = 57.12, 
+                   color = "purple",
+                   popup="Highland",
+                   radius = sqrt(60411/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.083999664, 
+                   lat = 55.905496378, 
+                   color = "purple",
+                   popup="Lothian",
+                   radius = sqrt(185589	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.0, 
+                   lat = 59.0, 
+                   color = "purple",
+                   popup="Orkney",
+                   radius = sqrt(3375/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -1.2689, 
+                   lat = 60.3038, 
+                   color = "purple",
+                   popup="Shetland",
+                   radius = sqrt(3248/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -7.02, 
+                   lat =  57.76, 
+                   color = "purple",
+                   popup="Western Isles",
+                   radius = sqrt(5398/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.1999992, 
+                   lat =    56.249999, 
+                   color = "purple",
+                   popup="Fife",
+                   radius = sqrt(84101/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.7333304, 
+                   lat = 56.6999972, 
+                   color = "purple",
+                   popup="Tayside",
+                   radius = sqrt(104225/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -4.4057, 
+                   lat = 55.90137, 
+                   color = "purple",
+                   popup="Greater Glasgow and Clyde",
+                   radius = sqrt(273189	/ 10), weight = 1) %>% 
+   addCircleMarkers(lng = -3.83333, 
+                   lat = 55.583331, 
+                   color = "purple",
+                   popup="Lanarkshire",
+                   radius = sqrt(143644	/ 10), weight = 1) 
+```
+

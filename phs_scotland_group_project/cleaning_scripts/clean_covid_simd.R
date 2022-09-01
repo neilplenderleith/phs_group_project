@@ -44,6 +44,8 @@ hb_simd <- hb_simd %>%
   mutate(month = month(week_ending, label = TRUE),
          year = year(week_ending))
 
+
+
 #number of admissions per hb_board 
 
 # hb_simd %>% 
@@ -531,6 +533,7 @@ hb_simd %>%
 
 
 library(plotly)
+
 hb_simd$simd_quintile <- factor(hb_simd$simd_quintile, levels = c("1", "2", "3", "4", "5"))
 hb_simd
 #mean admissions per SIMD from 2020 to 2022
