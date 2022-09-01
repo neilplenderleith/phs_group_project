@@ -12,6 +12,7 @@ library(leaflet)
 library(sf)
 library(scales)
 library(here)
+library(brew)
 here()
 
 
@@ -545,7 +546,9 @@ server <- function(input, output) {
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       labs(x = "\nDate",
-           y = "Percentage")
+           y = "Percentage",
+           title = "\n",
+           subtitle = "\n")
     
     ggplotly(ae_wait_plotly)
   })
@@ -647,6 +650,7 @@ server <- function(input, output) {
                     group = destination), alpha = 0.5) +
       scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
       scale_y_sqrt() +
+      scale_color_brewer(palette = "Paired") +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9))+
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
@@ -683,6 +687,7 @@ server <- function(input, output) {
       labs(x = "\nYear and quarter",
            y = "Mean episodes\n",
            colour = "Age")+
+      scale_color_brewer(palette = "Paired") +
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
@@ -690,7 +695,6 @@ server <- function(input, output) {
       config(displayModeBar = FALSE)
   })
   
-  # view(hb_agesex)
   
   filtered_hb_age_plot <- reactive({
     hb_agesex %>% 
@@ -724,6 +728,7 @@ server <- function(input, output) {
                                  "2018/2019 avg admissions: ", 
                                  round(mean_20182019_admissions))), 
                position = "dodge") +
+      scale_fill_brewer(palette = "Paired") +
       labs(title = "Comparison between winter and non-winter months",
            x = "\n Age group",
            y = "Mean number of admissions",
@@ -756,6 +761,7 @@ server <- function(input, output) {
       labs(x = "\nYear and quarter",
            y = "Mean episodes\n",
            colour = "Sex")+
+      scale_color_brewer(palette = "Paired") +
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
@@ -788,6 +794,7 @@ server <- function(input, output) {
       labs(x = "\nYear and quarter",
            y = "Mean episodes\n",
            colour = "SIMD")+
+      scale_color_brewer(palette = "Paired") +
       theme_minimal()+
       theme(axis.text.x = element_text(angle = 45, hjust = 1, size =9))
     
@@ -824,6 +831,7 @@ server <- function(input, output) {
                     group = simd_quintile)) +
       scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
       scale_y_sqrt() +
+      scale_color_brewer(palette = "Paired") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
       geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50")+
       geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50")+
