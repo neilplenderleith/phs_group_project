@@ -527,7 +527,8 @@ server <- function(input, output) {
       geom_line(aes(colour = department_type))+
       scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y")+
       theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9))+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =9),
+            legend.position = "none")+
       geom_smooth()+
       geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
       geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
@@ -840,7 +841,7 @@ server <- function(input, output) {
   })
   
   filtered_simd_map <- reactive({
-    hb_simd %>%
+    test <- hb_simd %>%
       filter(simd_quintile == input$simd_map,
              year == input$simd_map_year) %>%
       filter(admission_type == "Emergency") %>%
@@ -848,9 +849,10 @@ server <- function(input, output) {
         mutate(month = month(week_ending, label = TRUE),
                year = year(week_ending), .after = week_ending) %>%
       group_by(hb_name, year, simd_quintile) %>%
-      summarise(mean_admissions = mean(number_admissions)*100)
+      summarise(mean_admissions = mean(number_admissions)/10) %>% 
+      arrange(hb_name)
   })
-
+  
 
   output$simd_leaflet <- renderLeaflet({
     filtered_simd_map() %>%
@@ -861,73 +863,73 @@ server <- function(input, output) {
       addCircleMarkers(lng = -4.975,
                        lat = 55.445,
                        color = "red",
-                       popup="Ayrshire and Arran",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Ayrshire and Arran", test$mean_admissions[1]),
+                       radius = test$mean_admissions[1], weight = 1) %>%
       addCircleMarkers(lng = -2.83333000,
                        lat = 55.58333000,
                        color = "red",
-                       popup="Borders",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Borders", test$mean_admissions[2]),
+                       radius = test$mean_admissions[2], weight = 1) %>%
       addCircleMarkers(lng = -3.857784,
                        lat = 54.988285,
                        color = "red",
-                       popup="Dumfries and Galloway",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Dumfries and Galloway", test$mean_admissions[3]),
+                       radius = test$mean_admissions[3], weight = 1) %>%
       addCircleMarkers(lng = -3.78535,
                        lat = 56.0021,
                        color = "red",
-                       popup="Forth Valley",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Forth Valley", test$mean_admissions[5]),
+                       radius = test$mean_admissions[5], weight = 1) %>%
       addCircleMarkers(lng = -2.988,
                        lat = 57.228,
                        color = "red",
-                       popup="Grampian",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Grampian", test$mean_admissions[6]),
+                       radius = test$mean_admissions[6], weight = 1) %>%
       addCircleMarkers(lng = -4.71,
                        lat = 57.12,
                        color = "red",
-                       popup="Highland",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Highland", test$mean_admissions[8]),
+                       radius = test$mean_admissions[8], weight = 1) %>%
       addCircleMarkers(lng = -3.083999664,
                        lat = 55.905496378,
                        color = "red",
-                       popup="Lothian",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Lothian", test$mean_admissions[10]),
+                       radius = test$mean_admissions[10], weight = 1) %>%
       addCircleMarkers(lng = -3.0,
                        lat = 59.0,
                        color = "red",
-                       popup="Orkney",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Orkney", test$mean_admissions[11]),
+                       radius = test$mean_admissions[11], weight = 1) %>%
       addCircleMarkers(lng = -1.2689,
                        lat = 60.3038,
                        color = "red",
-                       popup="Shetland",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Shetland", test$mean_admissions[12]),
+                       radius = test$mean_admissions[12], weight = 1) %>%
       addCircleMarkers(lng = -7.02,
                        lat =  57.76,
                        color = "red",
-                       popup="Western Isles",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Western Isles", test$mean_admissions[14]),
+                       radius = test$mean_admissions[14], weight = 1) %>%
       addCircleMarkers(lng = -3.1999992,
                        lat =    56.249999,
                        color = "red",
-                       popup="Fife",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Fife", test$mean_admissions[4]),
+                       radius = test$mean_admissions[4], weight = 1) %>%
       addCircleMarkers(lng = -3.7333304,
                        lat = 56.6999972,
                        color = "red",
-                       popup="Tayside",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Tayside", test$mean_admissions[13]),
+                       radius = test$mean_admissions[13], weight = 1) %>%
       addCircleMarkers(lng = -4.4057,
                        lat = 55.90137,
                        color = "red",
-                       popup="Greater Glasgow and Clyde",
-                       radius = hb_simd$mean_admissions, weight = 1) %>%
+                       popup=paste0("Greater Glasgow and Clyde", test$mean_admissions[7]),
+                       radius = test$mean_admissions[7], weight = 1) %>%
       addCircleMarkers(lng = -3.83333,
                        lat = 55.583331,
                        color = "red",
-                       popup="Lanarkshire",
-                       radius = hb_simd$mean_admissions, weight = 1)
+                       popup=paste0("Lanarkshire", test$mean_admissions[9]),
+                       radius = test$mean_admissions[9], weight = 1)
   })
   
 }
