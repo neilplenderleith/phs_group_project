@@ -38,77 +38,6 @@ hb_simd
 
 #geospatial 
 
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Ayrshire and Arran") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Borders") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Dumfries and Galloway") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Forth Valley") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Grampian") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Highland") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Lothian") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Orkney") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Shetland") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Western Isles") %>% 
-  summarise(sum(number_admissions))
-
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Fife") %>% 
-  summarise(sum(number_admissions))
-
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Tayside") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Greater Glasgow and Clyde") %>% 
-  summarise(sum(number_admissions))
-
-hb_simd %>% 
-  filter(admission_type == "Emergency", 
-         hb_name == "NHS Lanarkshire") %>% 
-  summarise(sum(number_admissions))
 
 #number of admissions per hb_board 
 
@@ -594,6 +523,7 @@ hb_simd %>%
 
 
 library(plotly)
+
 hb_simd$simd_quintile <- factor(hb_simd$simd_quintile, levels = c("1", "2", "3", "4", "5"))
 hb_simd
 #mean admissions per SIMD from 2020 to 2022
