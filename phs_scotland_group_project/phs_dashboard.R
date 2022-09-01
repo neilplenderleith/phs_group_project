@@ -143,7 +143,7 @@ ui <- navbarPage(
   
   theme = bs_theme(bootswatch = "flatly"),
   
-  title = tags$h4("Accute Hospital Activity Dashboard"),
+  title = tags$h4("Acute Hospital Activity Dashboard"),
   
   header = tagList(
     useShinydashboard()
@@ -310,7 +310,7 @@ ui <- navbarPage(
                
                box(
                  width = 12,
-                 title = tags$h3("Mean Admissions for all Accute Patients"),
+                 title = tags$h3("Mean Admissions for all Acute Patients"),
                  status = "success",
                  solidHeader = TRUE,
                  height = 600,
@@ -457,11 +457,6 @@ ui <- navbarPage(
            ),
 
            leafletOutput("simd_leaflet", height = "100vh", width = "100vw")
-  ),
-  
-  
-  tabPanel(tags$h5("Data"),
-           DT::dataTableOutput("table_output")
   )
 )
 
@@ -550,7 +545,8 @@ server <- function(input, output) {
            title = "\n",
            subtitle = "\n")
     
-    ggplotly(ae_wait_plotly)
+    ggplotly(ae_wait_plotly) %>% 
+      config(displayModeBar = FALSE)
   })
   
   #reactive to filter for user input
@@ -729,6 +725,7 @@ server <- function(input, output) {
                                  round(mean_20182019_admissions))), 
                position = "dodge") +
       scale_fill_brewer(palette = "Paired") +
+      theme_minimal() +
       labs(title = "Comparison between winter and non-winter months",
            x = "\n Age group",
            y = "Mean number of admissions",
