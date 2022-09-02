@@ -1,4 +1,4 @@
----
+a---
 title: "R Notebook"
 output: html_notebook
 ---
@@ -286,7 +286,8 @@ age_sex %>%
   theme(axis.text.x = element_text(angle = 45))+
   #geom_smooth(aes(colour = sex, group = sex), se = FALSE)+
   geom_point(aes(colour = age), size = 0.5)+
-  labs(title = "Emergency inpatient by age and avg length of stay")
+  labs(title = "Emergency inpatient by age and avg length of stay")+
+  theme_minimal()
 
 # elective inpatient by age and avg length of stay
 age_sex %>% 

@@ -8,6 +8,8 @@ library(lubridate)
 library(here)
 here()
 
+#scotland$HBCode[7]
+
 scotland <- st_read(here("clean_data/shapefile/scotland_smaller.gpkg"))
 
 #transform so leaflet is happy with it
