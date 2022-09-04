@@ -18,82 +18,82 @@ here()
 
 # data wrangling ----------------------------------------------------------
 
-waiting_times <- read_csv("clean_data/wait_times.csv")
+waiting_times <- read_csv("clean_data/wait_times.csv") # read in clean data
 
-waiting_times <- waiting_times %>% 
+waiting_times <- waiting_times %>% # add year column
   mutate(year = year(date))
 
-min_year_wait <- min(waiting_times$year)
-max_year_wait <- max(waiting_times$year)
+min_year_wait <- min(waiting_times$year) # pull min year for slider
+max_year_wait <- max(waiting_times$year) # pull max year for slider 
 
-all_years <- waiting_times %>% 
+all_years <- waiting_times %>% # pull all years for slider
   distinct(year) %>% 
   arrange(year) %>% 
   pull()
 
-all_discharges <- waiting_times %>% 
+all_discharges <- waiting_times %>% # pull discharge destinations for radio buttons
   distinct(discharge_destination) %>% 
   arrange(discharge_destination) %>% 
   pull()
 
-ae_wait_times <- read_csv("clean_data/non_covid_data/ae_wait_times.csv")
+ae_wait_times <- read_csv("clean_data/non_covid_data/ae_wait_times.csv") # read in clean data set
 
-age <- read_csv("clean_data/non_covid_data/age_sex.csv")
+age <- read_csv("clean_data/non_covid_data/age_sex.csv") # read in clean data set
 
-all_ages <- age %>% 
+all_ages <- age %>% # pull ages for checkbox
   distinct(age) %>% 
   arrange(age) %>% 
   pull()
 
-min_year_age <- min(age$year)
-max_year_age <- max(age$year)
+min_year_age <- min(age$year) # pull min year for slider
+max_year_age <- max(age$year) # pull max year for slider
 
-sex <- read_csv("clean_data/non_covid_data/age_sex.csv")
+sex <- read_csv("clean_data/non_covid_data/age_sex.csv") # read in clean data set
 
-all_sex <- sex %>% 
+all_sex <- sex %>% # pull all sex for checkbox
   distinct(sex) %>% 
   arrange(sex) %>% 
   pull()
 
-min_year_sex <- min(sex$year)
-max_year_sex <- max(sex$year)
+min_year_sex <- min(sex$year) # pull min year for slider
+max_year_sex <- max(sex$year) # pull max year for slider
 
-simd <- read_csv("clean_data/non_covid_data/simd.csv")
+simd <- read_csv("clean_data/non_covid_data/simd.csv") # read in clean data set
 
-all_simd <- simd %>%
+all_simd <- simd %>% # pull simd quintiles for checkbox
   drop_na(simd) %>% 
   distinct(simd) %>% 
   arrange(simd) %>% 
   pull()
 
-min_year_simd <- min(simd$year)
-max_year_simd <- max(simd$year)
+min_year_simd <- min(simd$year) # pull min year for slider
+max_year_simd <- max(simd$year) # pull max year for slider
 
-covid_ae_attendances <- read_csv("clean_data/covid_ae_attendance.csv")
+covid_ae_attendances <- read_csv("clean_data/covid_ae_attendance.csv") # read in clean dats set
 
-all_healthboards <- covid_ae_attendances %>% 
+all_healthboards <- covid_ae_attendances %>% # pull all healthboards for select input
   distinct(hb_name) %>% 
   arrange(hb_name) %>% 
   pull()
 
-hb_simd <- read_csv("clean_data/hb_simd_clean.csv")
+hb_simd <- read_csv("clean_data/hb_simd_clean.csv") # read in clean data set
 
-all_healthboards_simd <- hb_simd %>% 
+all_healthboards_simd <- hb_simd %>% # pull all healthboards for select input
   distinct(hb_name) %>% 
   arrange(hb_name) %>% 
   pull()
 
-all_simd_map <- hb_simd %>% 
+all_simd_map <- hb_simd %>% # pull all simd quintiles for select input
   distinct(simd_quintile) %>% 
   arrange(simd_quintile) %>% 
   pull()
 
-all_simd_year <- hb_simd %>%
+all_simd_year <- hb_simd %>% # pull all years for select input
   distinct(year) %>% 
   arrange(year) %>% 
   pull()
 
-scotland <- st_read("clean_data/shapefile/scotland_smaller.gpkg")
+scotland <- st_read("clean_data/shapefile/scotland_smaller.gpkg") # read in clean data set
 
 #transform so leaflet is happy with it
 scotland <- st_transform(scotland, '+proj=longlat +datum=WGS84')
@@ -120,119 +120,119 @@ scotland <- scotland %>%
 scotland <- scotland %>% 
   pivot_longer(cols = "2007":"2021", names_to = "target_years", values_to = "percentage")
 
-scotland_years <- scotland %>% 
+scotland_years <- scotland %>% # pull all years for slider 
   distinct(target_years) %>% 
   arrange(target_years) %>% 
   pull()
 
-min_scotland_year <- min(scotland$target_years)
-max_scotland_year <- max(scotland$target_years)
+min_scotland_year <- min(scotland$target_years) # pull min year for slider
+max_scotland_year <- max(scotland$target_years) # pull max year for slider 
 
-hb_agesex <- read_csv("clean_data/covid_agesex.csv")
+hb_agesex <- read_csv("clean_data/covid_agesex.csv") # read in clean data set
 
-all_hb_ages <- hb_agesex %>%
-  filter(age_group != "All ages") %>% 
-  distinct(age_group) %>% 
-  arrange(factor(age_group, levels = c("Under 5", "5 - 14", "15 - 44", "45 - 64", "65 - 74", "75 - 84", "85 and over"))) %>% 
+all_hb_ages <- hb_agesex %>% # pull age groups for checkbox
+  filter(age_group != "All ages") %>% #drop 'All ages' 
+  distinct(age_group) %>% # select distinct age group
+  arrange(factor(age_group, levels = c("Under 5", "5 - 14", "15 - 44", "45 - 64", "65 - 74", "75 - 84", "85 and over"))) %>% # arrange age groups in desired order
   pull()
 
 
 # ui ----------------------------------------------------------------------
 
-ui <- navbarPage(
+ui <- navbarPage( # use navbarPage to use the tabs
   
-  theme = bs_theme(bootswatch = "flatly"),
+  theme = bs_theme(bootswatch = "flatly"), # choose theme 
   
-  title = tags$h4("Acute Hospital Activity Dashboard"),
+  title = tags$h4("Acute Hospital Activity Dashboard"), # set page title
   
-  header = tagList(
-    useShinydashboard()
+  header = tagList( # use this to change from navbar configuration to shiny dashboard
+    useShinydashboard() # need to use shiny dashboard to use things like fluidRows
   ),
   
-  position = "static-top",
+  position = "static-top", # keeps tabs at the top of the dashboard
   
-  fluid = TRUE,
+  fluid = TRUE, # set fluid to TRUE
   
-  tabPanel(tags$h5("Overview"),
+  tabPanel(tags$h5("Overview"), # name of the first tab, and area to insert code
            
-           fluidRow(
+           fluidRow( # put plots side by side in a fluidRow
              
-             box(
-               title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"),
-               status = "primary",
-               solidHeader = TRUE,
-               height = 750,
+             box( # put plot in a box
+               title = tags$h3("Percentage of A&E Departments Meeting the 4hr Target Turnaround for Patients"), # box title used for plot title
+               status = "primary", # this colours the box, colour is based on the theme used
+               solidHeader = TRUE, # makes the header filled with colour
+               height = 750, # set height to fill screen
                
-               plotlyOutput("ae_wait_times_plot")
+               plotlyOutput("ae_wait_times_plot") # call the plot
              ),
              
              box(
                title = tags$h3("Percentage of A&E Departments Meeting 4hr Target by Healthboard"),
-               status = "warning",
+               status = "warning", # different status for a different colour 
                solidHeader = TRUE,
                height = 750,
                
-               sliderInput(inputId = "leaflet_year_slider",
-                           label = "Please select year",
-                           min = 2007,
-                           max = 2021,
+               sliderInput(inputId = "leaflet_year_slider", # slider input for year
+                           label = "Please select year", # title of the slider
+                           min = 2007, # min slider value
+                           max = 2021, # max slider value
                            sep = "",
-                           value = 2007
+                           value = 2007 # starting value
                            ),
                
-               leafletOutput("scotlandmap", height = "53vh", width = "45vw")
+               leafletOutput("scotlandmap", height = "53vh", width = "45vw") # call the leaflet, set height and width
              )
            )
            
   ),
   
   
-  tabPanel(tags$h5("Discharge Destinations"),
+  tabPanel(tags$h5("Discharge Destinations"), # name of the second tab
            
-           sidebarLayout(
+           sidebarLayout( # use a sidebar layout
              
-             sidebarPanel = sidebarPanel(
+             sidebarPanel = sidebarPanel( # configure sidebar panel
                
-               width = 4,
+               width = 4, # set width
                
-               titlePanel(tags$h1("Discharge destination plot controls")),
+               titlePanel(tags$h1("Discharge destination plot controls")), # sidebar title
                
-               sliderInput(inputId = "winter_wait",
-                           label = tags$h2("Please select year range"),
-                           min = min_year_wait,
-                           max = max_year_wait,
-                           value = c(min_year_wait, max_year_wait),
-                           step = 1,
+               sliderInput(inputId = "winter_wait", # slider input for year range
+                           label = tags$h2("Please select year range"), # title of the slider
+                           min = min_year_wait, # min slider value taken from values set outside ui
+                           max = max_year_wait, # max slider value taken from values set outside ui
+                           value = c(min_year_wait, max_year_wait), # starting values based on min and max values
+                           step = 1, # slider increments set to 1 year
                            sep = ""
                ),
                
-               radioButtons(inputId = "discharge_destination",
-                            label = tags$h2("Patient discharge destination"),
-                            choices = all_discharges
+               radioButtons(inputId = "discharge_destination", # radio button to choose discharge destination
+                            label = tags$h2("Patient discharge destination"), # title of radio buttons
+                            choices = all_discharges # choices based on values pulled outside ui
                )
              ),
              
-             mainPanel = mainPanel(
+             mainPanel = mainPanel( # configure main panel
                box(
-                 title = tags$h3("Proportion of Patients Being Dicharged to Different Destinations"),
+                 title = tags$h3("Proportion of Patients Being Dicharged to Different Destinations"), # title of the box
                  status = "primary",
                  solidHeader = TRUE,
-                 width = 12,
-                 height = 600,
+                 width = 12, # set width
+                 height = 600, # set height
                  
-                 plotlyOutput("winter_plot")
+                 plotlyOutput("winter_plot") # call plot
                )
              )
            )
   ),
   
   
-  tabPanel(tags$h5("COVID-19 A&E Attendances"),
+  tabPanel(tags$h5("COVID-19 A&E Attendances"), # name of the third tab
            
-           selectInput(
-             inputId = "health_boards",
-             label = tags$h3("Select healthboard"),
-             choices = all_healthboards
+           selectInput( # drop down select input 
+             inputId = "health_boards", # select input
+             label = tags$h3("Select healthboard"), # title for select input
+             choices = all_healthboards 
            ),
            
            fluidRow(
@@ -270,8 +270,8 @@ ui <- navbarPage(
                
                titlePanel(tags$h1("Hospital episode plot controls")),
                
-               checkboxGroupInput(
-                 inputId = "age_groups",
+               checkboxGroupInput( # checkbox input
+                 inputId = "age_groups", 
                  label = tags$h3("Select patient age group(s)"),
                  choices = all_ages,
                  selected = all_ages
@@ -466,51 +466,52 @@ ui <- navbarPage(
 
 server <- function(input, output) {
   
-  filtered_winter_plot <- reactive({
+  filtered_winter_plot <- reactive({ # make plot reactive
     waiting_times %>%
-      filter(discharge_destination == input$discharge_destination,
-             !is.na(discharge_proportion),
-             year >= input$winter_wait[1] & year <= input$winter_wait[2]) %>% 
+      filter(discharge_destination == input$discharge_destination, # filter discharge destination based on radio buttons input
+             !is.na(discharge_proportion), # drop NAs
+             year >= input$winter_wait[1] & year <= input$winter_wait[2]) %>% # filter year to be values equal to and between slider input
       group_by(date) %>% 
-      summarise(mean_discharge = mean(discharge_proportion))
+      summarise(mean_discharge = mean(discharge_proportion)) # calculate mean based on the reactive filters
   })
   
-  output$winter_plot <- renderPlotly({
-    winter_plotly <- filtered_winter_plot() %>%
-      ggplot() +
-      geom_point(aes(x = date,
-                     y = mean_discharge,
-                     text =  paste0("Date: ", date,
+  output$winter_plot <- renderPlotly({ # render plotly
+    winter_plotly <- filtered_winter_plot() %>% # set plot to the reactive function
+      ggplot() + # use ggplot
+      geom_point(aes(x = date, # choose x-axis
+                     y = mean_discharge, # choose y-axis
+                     text =  paste0("Date: ", date, # set text for point text
                                     "<br>",
                                     "Percentage: ", 
-                                    round(mean_discharge*100, digits = 2), 
-                                    "%")), size = 0.7) +
+                                    round(mean_discharge*100, digits = 2), # use  calculated number
+                                    "%")), size = 0.7) + # set point size
       geom_line(aes(x = date,
                     y = mean_discharge)) +
-      scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) +
-      geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+
-      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7) +
-      labs(x = "\n Date",
-           y = "Proportion of attendances")
+      scale_x_date(date_breaks = "6 months", date_labels =  "%b %Y") + # set x-axis scale
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) + # set x-axis text
+      theme_minimal() + # set plot theme
+      geom_vline(xintercept = as.numeric(as.Date("2008-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2009-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2010-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2011-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2013-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2014-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2015-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2016-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2017-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2018-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2019-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2020-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2021-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      geom_vline(xintercept = as.numeric(as.Date("2022-01-01")), linetype=4, colour = "grey50", alpha = 0.7)+ # insert vertical line for January
+      labs(x = "\n Date", # x-axis label
+           y = "Proportion of attendances") # y-axis label 
     
-    winter_plotly %>% 
-      ggplotly(tooltip = "text") %>% 
-      config(displayModeBar = FALSE) %>% 
-      layout(hoverlabel = list(bgcolor = "white"))
+    winter_plotly %>% # convert plot to a plotly
+      ggplotly(tooltip = "text") %>% # configure popup text
+      config(displayModeBar = FALSE) %>% # remove plot control bar
+      layout(hoverlabel = list(bgcolor = "white")) 
   })
   
   output$ae_wait_times_plot <- renderPlotly({
@@ -565,10 +566,10 @@ server <- function(input, output) {
   output$scotlandmap <- renderLeaflet({
     m <- leaflet()
     m %>% addTiles() %>%
-      addPolygons(data=scotland_filtered(),
+      addPolygons(data=scotland_filtered(), # make polygons reactive
                   smoothFactor = 0.3,
                   fillOpacity = 1,
-                  fillColor = ~pal(percentage),#fill by percentage of 4hr target
+                  fillColor = ~pal(percentage), # fill by percentage of 4hr target
                   label = ~paste0(HBName,"<br>",
                                   percentage, "%", "<br>",
                                   target_years) %>% lapply(htmltools::HTML),
@@ -578,7 +579,7 @@ server <- function(input, output) {
                                                       bringToFront = TRUE)) %>%
       setView(-4, 57, zoom = 5.5) %>%
       addLegend(pal = pal,
-                values = scotland$percentage,
+                values = scotland$percentage, # set value to display
                 opacity = 0.5,
                 title = "% A&E meeting<br> 4hr target")
 
@@ -664,16 +665,13 @@ server <- function(input, output) {
   filtered_age_plot <- reactive({
     age %>% 
       filter(year >= input$age_year[1] & year <= input$age_year[2],
-             age %in% input$age_groups) %>% 
+             age %in% input$age_groups) %>% # make check box reactive
       group_by(quarter, age) %>% 
       summarise(avg_episodes = mean(episodes, na.rm = TRUE))
   })
   
   output$age_plot <- renderPlotly({
     age_plotly <- filtered_age_plot() %>% 
-      #filter(min_date < year & year < max_date) %>% 
-      # group_by(quarter, age) %>% 
-      # summarise(avg_episodes = mean(episodes, na.rm = TRUE)) %>% 
       ggplot(aes(x = quarter, y = avg_episodes))+
       geom_line(aes(colour = age, group = age))+ 
       geom_point(aes(colour = age,
@@ -726,7 +724,7 @@ server <- function(input, output) {
                position = "dodge") +
       scale_fill_brewer(palette = "Paired") +
       theme_minimal() +
-      labs(title = "Comparison between winter and non-winter months",
+      labs(title = "Comparison between winter and non-winter months", # plot subtitle
            x = "\n Age group",
            y = "Mean number of admissions",
            fill = "Season")
@@ -848,14 +846,14 @@ server <- function(input, output) {
   filtered_simd_map <- reactive({
     
       hb_simd %>%
-      filter(admission_type == "Emergency",
-             year == input$simd_map_year) %>%
-      mutate(week_ending = ymd(week_ending)) %>%
+      filter(admission_type == "Emergency", # set admission type
+             year == input$simd_map_year) %>% # set year to input of select input
+      mutate(week_ending = ymd(week_ending)) %>% # 
       mutate(month = month(week_ending, label = TRUE),
-             year = year(week_ending), .after = week_ending) %>%
+             year = year(week_ending), .after = week_ending) %>% # input a year column to use
       group_by(hb_name, year, simd_quintile) %>%
-      summarise(mean_admissions = mean(number_admissions)) %>% 
-      filter(simd_quintile == input$simd_map) %>%
+      summarise(mean_admissions = mean(number_admissions)) %>% # calculate desried mean based on above filters and group
+      filter(simd_quintile == input$simd_map) %>% # filter simd rows to match select input
       arrange(hb_name)
   })
   
@@ -865,12 +863,12 @@ server <- function(input, output) {
     leaflet() %>%
       addTiles() %>%
       setView(-4, 55.5, zoom = 7) %>%
-      addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Ayrshire and Arran"),
-                       lng = -4.975,
-                       lat = 55.445,
+      addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Ayrshire and Arran"), # set marker to be reactive and filter to make this marker react to hb data
+                       lng = -4.975, # use hb lon
+                       lat = 55.445, # use hb lat
                        color = "red",
-                       popup= ~paste0("Ayrshire and Arran", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)),
-                       radius = ~(mean_admissions/5), weight = 1) %>% 
+                       popup= ~paste0("Ayrshire and Arran", "<br>", "Mean Admissions: ",round(mean_admissions, digits = 2)), # configure popup text
+                       radius = ~(mean_admissions/5), weight = 1) %>% # set marker size to be the calculated number / 5 for scale
       addCircleMarkers(data = filtered_simd_map() %>% filter(hb_name == "NHS Borders"),
                        lng = -2.83333000,
                        lat = 55.58333000,
