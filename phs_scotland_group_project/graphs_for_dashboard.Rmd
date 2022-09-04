@@ -604,4 +604,3 @@ winter_plotly %>%
 layout(hoverlabel = list(bgcolor = "white"))
 
 ```
-

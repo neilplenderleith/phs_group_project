@@ -439,6 +439,61 @@ hb_simd %>% names(
 )
 ```
 
+
+
+
+```{r}
+#join with hb_names to get hb names
+hb_simd <- hb_simd %>% 
+  left_join(hb_names, by = "hb")
+```
+
+
+```{r}
+#change week_ending into date format
+hb_simd <- hb_simd %>% 
+  mutate(week_ending = ymd(week_ending))
+```
+
+```{r}
+hb_simd <- hb_simd %>% 
+  mutate(month = month(week_ending, label = TRUE),
+         year = year(week_ending), .after = week_ending)
+```
+
+
+```{r}
+#create winter and non winter groups
+hb_simd <- hb_simd %>% 
+  mutate(is_winter = if_else(
+    month %in% c("Dec", "Jan", "Feb"), TRUE, FALSE
+  ), .after = month)
+```
+
+```{r}
+#impute NAs in hb_name with all scotland b/c these are only for the all scotland hb code
+hb_simd <- hb_simd %>% 
+  mutate(hb_name = if_else(
+    is.na(hb_name),
+    "All Scotland",
+    hb_name
+  )) 
+```
+
+```{r}
+hb_simd %>% 
+  group_by(hb_name, year, simd_quintile) %>% 
+  summarise(mean_admissions = mean(number_admissions),
+            mean_201819_admissions = mean(average20182019)) %>% 
+  filter(year == 2020,
+         simd_quintile == 5)
+```
+
+
+
+
+
+
 ## HB Specialty dataset
 
 ### Variables in dataset

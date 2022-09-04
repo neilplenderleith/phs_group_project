@@ -8,7 +8,7 @@ library(lubridate)
 library(here)
 here()
 
-scotland$HBCode[7]
+#scotland$HBCode[7]
 
 scotland <- st_read(here("clean_data/shapefile/scotland_smaller.gpkg"))
 
@@ -65,7 +65,7 @@ server <- function(input, output) {
     
   })
   # palette
-  pal <- colorNumeric(a
+  pal <- colorNumeric(
     palette = "viridis",
     domain = scotland$percentage
   )
