@@ -354,7 +354,7 @@ age_sex %>%
   labs(title = "Elective inpatient by age and avg episodes")
 ```
 
-
+An Analysis of this visualisation would be that the older the age group, the more Hospital episodes there are, with the exception of the 90 and over age group (which may be small due to life expectancy). A dip can be seen when COVID took effect in early 2020.
 
 ```{r}
 # Plot comparison of Emergency vs Elective submissions
